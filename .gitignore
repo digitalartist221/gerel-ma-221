@@ -1,0 +1,7 @@
+/vendor/
+/config.php
+/config/app.php
+/storage/cache/
+/.gemini/
+.env
+*.log

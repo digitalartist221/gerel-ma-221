@@ -1,0 +1,227 @@
+#!/usr/bin/env php
+<?php
+/**
+ * Madeline Framework - Ligeey CLI
+ * Version: 1.0.0 Stable (Wolofized)
+ */
+
+if (php_sapi_name() !== 'cli') {
+    die("Ligeey doit être exécuté en ligne de commande.");
+}
+
+require_once __DIR__ . '/Core/App.php';
+
+// Auto-chargement basique des classes
+spl_autoload_register(function ($class) {
+    $classFile = str_replace('\\', '/', $class) . '.php';
+    if (file_exists(__DIR__ . '/' . $classFile)) {
+        require_once __DIR__ . '/' . $classFile;
+    }
+});
+
+if ($argc < 2) {
+    showHelp();
+    exit(1);
+}
+
+$command = $argv[1];
+$arg = $argv[2] ?? null;
+
+switch ($command) {
+    case 'amal:controller':
+        if (!$arg) die("❌ Erreur: Dimbeuleul ma ak tourou Controller (ex: UserController).\n");
+        generateController($arg);
+        break;
+
+    case 'amal:model':
+        if (!$arg) die("❌ Erreur: Dimbeuleul ma ak tourou Model (ex: User).\n");
+        generateModel($arg);
+        break;
+        
+    case 'amal:migration':
+        if (!$arg) die("❌ Erreur: Dimbeuleul ma ak tourou Migration (ex: create_users_table).\n");
+        generateMigration($arg);
+        break;
+
+    case 'amal:crud':
+        if (!$arg) die("❌ Erreur: Dimbeuleul ma ak tourou Entité (ex: User).\n");
+        generateModel($arg);
+        generateController("{$arg}Controller");
+        generateViews(strtolower($arg));
+        echo "✓ Madeline amal na sa MVC '$arg' ak mboloo mu mat sëkk.\n";
+        break;
+
+    case 'yoon:run':
+    case 'migrate':
+        require_once __DIR__ . '/Packages/ORM/Blueprint.php';
+        require_once __DIR__ . '/Packages/ORM/Migrator.php';
+        \Core\Config::load();
+        $dbConfig = \Core\Config::get('database');
+        if (empty($dbConfig['name']) && !file_exists(__DIR__ . '/config.php')) {
+            die("❌ Erreur: Base de données configurer wul. Demal ci /setup.\n");
+        }
+        try {
+            $dsn = "mysql:host={$dbConfig['host']};dbname={$dbConfig['name']};charset={$dbConfig['charset']}";
+            $db = new \PDO($dsn, $dbConfig['user'], $dbConfig['pass'], [\PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION]);
+            $migrator = new \Packages\ORM\Migrator($db);
+            $migrator->migrate();
+            echo "✓ Yoon yi dox nañu guirr sa base de données.\n";
+        } catch (\PDOException $e) {
+            die("❌ Ndiagum DB am na jafe-jafe : " . $e->getMessage() . "\n");
+        }
+        break;
+
+    case 'tahl:auth':
+    case 'install:auth':
+        echo "⏳ Tahl bi pack d'authentification bi...\n";
+        \Packages\Auth\AuthScaffold::install(__DIR__);
+        echo "✓ Auths installés avec succès.\n";
+        break;
+
+    case 'far:auth':
+    case 'remove:auth':
+        echo "⏳ Far bi pack d'authentification bi...\n";
+        \Packages\Auth\AuthScaffold::uninstall(__DIR__);
+        echo "✓ Auths supprimés proprement.\n";
+        break;
+
+    case 'setal:cache':
+    case 'cache:clear':
+        echo "⏳ Setal bi caches yi...\n";
+        $cacheDir = __DIR__ . '/storage/cache/views';
+        if (is_dir($cacheDir)) {
+            $files = glob($cacheDir . '/*.php');
+            foreach ($files as $file) { if (is_file($file)) unlink($file); }
+            echo "✓ Cache des vues setal na.\n";
+        }
+        break;
+
+    case 'tahl:js':
+    case 'install:js':
+        if (!$arg) die("❌ Erreur: Spécifiez la librairie JS (alpine, vue, htmx, sweetalert2).\n");
+        installJsPlugin($arg);
+        break;
+
+    case 'takoo:storage':
+    case 'storage:link':
+        linkStorage();
+        break;
+
+    case 'doxal':
+    case 'serve':
+        $port = $arg ?: 8000;
+        $host = "localhost:$port";
+        echo "✓ Madeline doxal na sa serveur ci http://$host\n";
+        echo "💡 Bu la neexé dagg ko ak Ctrl+C.\n";
+        passthru("php -S $host -t " . __DIR__ . "/public/ " . __DIR__ . "/public/index.php");
+        break;
+
+    default:
+        echo "❌ Commande '$command' xamou ko.\n";
+        showHelp();
+        break;
+}
+
+function showHelp() {
+    echo "💡 Madeline CLI - Ligeey (Wolofized)\n";
+    echo "---------------------------------\n";
+    echo "Utilisation: php ligeey [commande] [arguments]\n\n";
+    echo "Commandes disponibles:\n";
+    echo "  amal:controller [Nom]     Amal ab contrôleur (ex: UserController)\n";
+    echo "  amal:model [Nom]          Amal ab modèle (ex: User)\n";
+    echo "  amal:migration [Nom]      Amal ab yoonu migration\n";
+    echo "  amal:crud [Nom]           Amal MVC bu mat sëkk\n";
+    echo "  yoon:run                  Doxal yoonu migrations yi\n";
+    echo "  tahl:auth                 Tahl bi pack d'authentification bi\n";
+    echo "  far:auth                  Far bi pack d'authentification bi\n";
+    echo "  setal:cache               Setal bi mboloo cache yi\n";
+    echo "  tahl:js [lib]             Tahl bi ab librairie JS (CDN)\n";
+    echo "  takoo:storage             Takoo storage ak public folder bi\n";
+    echo "  doxal [port]              Doxal sa serveur bi (default: 8000)\n";
+}
+
+function getHeaderPhpDoc($pageName) {
+    return "/**
+ * Page: $pageName
+ * Author: Digital Artist Studio
+ * Framework: Madeline (Wolof Edition)
+ */";
+}
+
+function generateController($name) {
+    $path = __DIR__ . "/App/Controllers/$name.php";
+    if (file_exists($path)) { echo "⚠️  $name am na ba pare.\n"; return; }
+    $header = getHeaderPhpDoc($name);
+    $shortName = basename(str_replace('\\', '/', $name));
+    $content = "<?php\nnamespace App\Controllers;\n\nuse Core\Router;\nuse Packages\View\MadelineView;\n\n$header\nclass $shortName {\n    public function index() {\n        // return MadelineView::render('home');\n    }\n}";
+    file_put_contents($path, $content);
+    echo "✅ Contrôleur amal na: App/Controllers/$name.php\n";
+}
+
+function generateModel($name) {
+    $path = __DIR__ . "/App/Models/$name.php";
+    if (file_exists($path)) { echo "⚠️  $name am na ba pare.\n"; return; }
+    $header = getHeaderPhpDoc("Modèle $name");
+    $content = "<?php\nnamespace App\Models;\n\nuse Packages\ORM\MadelineORM;\n\n$header\nclass $name extends MadelineORM {\n    public int \$id;\n}";
+    file_put_contents($path, $content);
+    echo "✅ Modèle amal na: App/Models/$name.php\n";
+}
+
+function generateMigration($name) {
+    $datePrefix = date('Y_m_d_His_');
+    $className = implode('', array_map('ucfirst', explode('_', $name)));
+    $filename = $datePrefix . $name . '.php';
+    $path = __DIR__ . "/App/Migrations/" . $filename;
+    if (!is_dir(__DIR__ . "/App/Migrations")) @mkdir(__DIR__ . "/App/Migrations", 0777, true);
+    $content = "<?php\nnamespace App\Migrations;\n\nclass $className {\n    public function up(\PDO \$db) {\n        // \$db->exec(\"...\");\n    }\n}";
+    file_put_contents($path, $content);
+    echo "✅ Migration amal na: App/Migrations/$filename\n";
+}
+
+function generateViews($name) {
+    $dir = __DIR__ . "/App/Views/$name";
+    if (!is_dir($dir)) mkdir($dir, 0777, true);
+    $indexView = $dir . "/index.madeline.php";
+    $viewContent = "@indi('layout')\n\n@def('content')\n<div class='container mx-auto p-4'>\n    <h1>Mboloo $name</h1>\n</div>\n@jeexdef";
+    if (!file_exists($indexView)) {
+        file_put_contents($indexView, $viewContent);
+        echo "✅ Vue amal na: App/Views/$name/index.madeline.php\n";
+    }
+}
+
+function installJsPlugin($pluginContext) {
+    $plugin = strtolower($pluginContext);
+    $cdns = [
+        'alpine' => '<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>',
+        'vue' => '<script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>',
+        'htmx' => '<script src="https://unpkg.com/htmx.org@1.9.10"></script>',
+        'sweetalert2' => '<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>',
+    ];
+    if (!isset($cdns[$plugin])) { echo "❌ Librairie xamou ko. Options: alpine, vue, htmx, sweetalert2.\n"; return; }
+    $layoutPath = __DIR__ . '/App/Views/layout.madeline.php';
+    if (file_exists($layoutPath)) {
+        $content = file_get_contents($layoutPath);
+        if (strpos($content, $plugin) === false) {
+            $content = str_replace('</head>', "    " . $cdns[$plugin] . "\n</head>", $content);
+            file_put_contents($layoutPath, $content);
+            echo "✅ $plugin tahl na ci sa layout !\n";
+        } else { echo "⚠️  $plugin am na ba pare.\n"; }
+    }
+}
+
+function linkStorage() {
+    $target = __DIR__ . '/storage/app/public';
+    $link = __DIR__ . '/public/storage';
+    if (!is_dir($target)) mkdir($target, 0777, true);
+    if (file_exists($link)) { echo "⚠️  Lien bi am na ba pare.\n"; return; }
+    if (PHP_OS_FAMILY === 'Windows') {
+        $target = str_replace('/', '\\', $target);
+        $link = str_replace('/', '\\', $link);
+        exec('mklink /D "' . $link . '" "' . $target . '"', $output, $resultCode);
+        if ($resultCode === 0 || @symlink($target, $link)) { echo "✓ Storage takoo na ak public bi.\n"; }
+        else { echo "❌ Jafe-jafe am na guirr takoo bi.\n"; }
+    } else {
+        if (@symlink($target, $link)) { echo "✓ Storage takoo na ak public bi.\n"; }
+        else { echo "❌ Jafe-jafe am na guirr takoo bi.\n"; }
+    }
+}

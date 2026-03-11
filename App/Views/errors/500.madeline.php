@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>500 - Erreur Serveur</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    animation: {
+                        blob: "blob 8s infinite",
+                    },
+                    keyframes: {
+                        blob: {
+                            "0%": { transform: "translate(0px, 0px) scale(1)" },
+                            "33%": { transform: "translate(30px, -50px) scale(1.1)" },
+                            "66%": { transform: "translate(-20px, 20px) scale(0.9)" },
+                            "100%": { transform: "translate(0px, 0px) scale(1)" },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-[#050507] text-white font-sans min-h-screen flex items-center justify-center relative overflow-hidden">
+    
+    <!-- Background Mesh Server Error -->
+    <div class="fixed inset-0 z-0 pointer-events-none opacity-60 mix-blend-screen">
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-red-900/20 rounded-full filter blur-[100px] animate-blob"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-96 h-96 bg-orange-900/10 rounded-full filter blur-[120px] animate-blob" style="animation-delay: 2s;"></div>
+    </div>
+    
+    <div class="relative z-10 text-center px-6 selection:bg-red-500/30">
+        <div class="inline-flex justify-center items-center w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 mb-8 shadow-[0_0_30px_rgba(220,38,38,0.2)] backdrop-blur-sm">
+            <svg class="w-8 h-8 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        
+        <h1 class="text-8xl md:text-9xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-white to-white/40 mb-4 drop-shadow-lg">500</h1>
+        <h2 class="text-2xl md:text-3xl font-medium mb-4 tracking-tight text-white">Erreur Serveur Interne</h2>
+        
+        <p class="text-gray-400 text-sm md:text-base font-light mb-10 max-w-md mx-auto leading-relaxed">
+            Une erreur inattendue s'est produite côté serveur, l'application ne peut pas résoudre votre requête pour le moment.
+        </p>
+        
+        <a href="/" class="group inline-flex items-center space-x-3 bg-white text-black px-6 py-3 rounded-full text-sm font-semibold hover:bg-gray-200 transition-all hover:scale-105 active:scale-95 shadow-[0_0_20px_rgba(255,255,255,0.15)]">
+            <svg class="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+            <span>Retour à l'accueil</span>
+        </a>
+    </div>
+    
+</body>
+</html>
