@@ -5,31 +5,57 @@
 
 <div class="space-y-10 animate-in fade-in duration-700">
     <!-- Header Hero -->
-    <header class="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
-        <div>
+    <header class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+        <!-- Title Block -->
+        <div class="shrink-0">
             <h1 class="text-5xl font-black text-slate-900 tracking-tighter mb-2">Synthèse <span class="text-brand-500">Business.</span></h1>
             <p class="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">Intelligence financière & Pilotage en temps réel</p>
         </div>
-        
-        <div class="flex flex-col md:flex-row items-center gap-4 w-full xl:w-auto">
-            <form method="GET" action="/dashboard" class="flex flex-wrap items-center gap-3 w-full md:w-auto p-2 bg-white rounded-3xl border border-slate-100 shadow-sm" id="dashboard-filters">
-                <select name="period" onchange="this.form.submit()" class="bg-slate-50 border-none rounded-2xl text-[10px] font-black uppercase tracking-widest px-6 py-3 text-slate-600 focus:ring-0 cursor-pointer outline-none">
-                    <option value="this_month" {{ ($filters['period'] ?? '') === 'this_month' ? 'selected' : '' }}>Ce Mois</option>
-                    <option value="last_month" {{ ($filters['period'] ?? '') === 'last_month' ? 'selected' : '' }}>Mois Précédent</option>
-                    <option value="this_year" {{ ($filters['period'] ?? '') === 'this_year' ? 'selected' : '' }}>Cette Année</option>
-                    <option value="all" {{ ($filters['period'] ?? '') === 'all' ? 'selected' : '' }}>Global (Tout l'historique)</option>
-                </select>
-                
-                <select name="entreprise_id" onchange="this.form.submit()" class="bg-indigo-50 border-none rounded-2xl text-[10px] font-black uppercase tracking-widest px-6 py-3 text-indigo-900 focus:ring-0 cursor-pointer outline-none">
-                    <option value="all">Toutes nos entités</option>
-                    @baat($entreprises as $ent)
-                        <option value="{{ $ent->id }}" {{ ($filters['entreprise_id'] ?? '') == $ent->id ? 'selected' : '' }}>{{ $ent->nom }}</option>
-                    @jeexbaat
-                </select>
+
+        <!-- Controls Block -->
+        <div class="flex flex-wrap items-center gap-3">
+            <!-- Filter Form : single horizontal pill -->
+            <form method="GET" action="/dashboard" id="dashboard-filters"
+                  class="flex items-center divide-x divide-slate-100 bg-white border border-slate-100 shadow-sm rounded-[2rem] overflow-hidden">
+
+                <!-- Period Select -->
+                <label class="flex items-center gap-2 px-5 py-3.5 hover:bg-slate-50 transition-colors cursor-pointer">
+                    <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <select name="period" onchange="this.form.submit()"
+                            class="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-slate-700 focus:ring-0 cursor-pointer outline-none pr-2 appearance-none">
+                        <option value="this_month"  {{ ($filters['period'] ?? '') === 'this_month'  ? 'selected' : '' }}>Ce mois</option>
+                        <option value="last_month"  {{ ($filters['period'] ?? '') === 'last_month'  ? 'selected' : '' }}>Mois précédent</option>
+                        <option value="this_year"   {{ ($filters['period'] ?? '') === 'this_year'   ? 'selected' : '' }}>Cette année</option>
+                        <option value="all"         {{ ($filters['period'] ?? '') === 'all'         ? 'selected' : '' }}>Tout l'historique</option>
+                    </select>
+                </label>
+
+                <!-- Divider handled by divide-x above -->
+
+                <!-- Enterprise Select -->
+                <label class="flex items-center gap-2 px-5 py-3.5 hover:bg-slate-50 transition-colors cursor-pointer">
+                    <svg class="w-3.5 h-3.5 text-indigo-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                    </svg>
+                    <select name="entreprise_id" onchange="this.form.submit()"
+                            class="bg-transparent border-none text-[10px] font-black uppercase tracking-widest text-indigo-700 focus:ring-0 cursor-pointer outline-none pr-2 appearance-none">
+                        <option value="all">Toutes les entités</option>
+                        @baat($entreprises as $ent)
+                            <option value="{{ $ent->id }}" {{ ($filters['entreprise_id'] ?? '') == $ent->id ? 'selected' : '' }}>{{ $ent->nom }}</option>
+                        @jeexbaat
+                    </select>
+                </label>
             </form>
-            
-            <a href="/dashboard/fiscalite?period={{ $filters['period'] ?? 'this_month' }}&entreprise_id={{ $filters['entreprise_id'] ?? 'all' }}" target="_blank" data-no-madeline="true" class="px-6 py-4 rounded-[1.5rem] bg-amber-50 text-amber-900 text-[10px] font-black uppercase tracking-widest hover:bg-amber-400 hover:text-white transition-all shadow-sm flex items-center gap-2 whitespace-nowrap">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+
+            <!-- Fiscal Report CTA -->
+            <a href="/dashboard/fiscalite?period={{ $filters['period'] ?? 'this_month' }}&entreprise_id={{ $filters['entreprise_id'] ?? 'all' }}"
+               target="_blank" data-no-madeline="true"
+               class="flex items-center gap-2 px-6 py-3.5 rounded-[2rem] bg-slate-900 text-white text-[10px] font-black uppercase tracking-widest hover:bg-amber-500 transition-all shadow-xl shadow-slate-900/10 whitespace-nowrap">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                </svg>
                 Rapport Fiscal
             </a>
         </div>
