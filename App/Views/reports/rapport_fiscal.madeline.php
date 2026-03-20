@@ -27,10 +27,11 @@
             border-radius: 4mm;
         }
         @media print {
+            * { print-color-adjust: exact !important; -webkit-print-color-adjust: exact !important; color-adjust: exact !important; }
             body { background-color: white; margin: 0; }
-            .a4-page { margin: 0; padding: 15mm; box-shadow: none; width: 100%; height: auto; border-radius: 0; }
+            .a4-page { margin: 0; padding: 15mm; box-shadow: none; width: 100%; min-height: 100vh; border-radius: 0; }
             .no-print { display: none !important; }
-            @page { margin: 0; size: A4; }
+            @page { margin: 0; size: A4 portrait; }
         }
     </style>
 </head>
