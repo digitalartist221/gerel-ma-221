@@ -267,7 +267,7 @@
     <!-- PUBLIC View (Login/Register)    -->
     <!-- =============================== -->
     <header class="fixed top-8 left-0 w-full z-50 px-4 md:px-10">
-        <nav class="max-w-4xl mx-auto flex items-center justify-between px-6 py-3 rounded-full bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+        <nav class="max-w-6xl mx-auto flex items-center justify-between px-6 py-3 rounded-full bg-white/90 backdrop-blur-md shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white/50">
             <a href="/" class="text-xl font-black tracking-tighter flex items-center gap-3">
                 <div class="w-2.5 h-2.5 bg-[#8b5cf6] rounded-full"></div>
                 <span class="text-[#050510]">Gerel Ma<span class="text-[#8b5cf6]">.</span></span>

@@ -12,7 +12,7 @@
     <!-- Centered Premium Hero Section -->
     <div class="relative z-10 w-full pt-32 lg:pt-40 pb-20 px-6 overflow-hidden">
         
-        <div class="max-w-5xl mx-auto text-center relative z-20">
+        <div class="max-w-6xl mx-auto text-center relative z-20">
             <!-- Over-header badge -->
             <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/80 backdrop-blur-md border border-brand-50 shadow-sm text-[#8b5cf6] text-[9px] font-black uppercase tracking-[0.2em] mb-12">
                 <span class="w-1.5 h-1.5 rounded-full bg-[#8b5cf6]"></span>
@@ -21,7 +21,7 @@
             
             <!-- Massive Headline -->
             <h1 class="text-[5rem] md:text-[8rem] font-black text-[#050510] tracking-tighter leading-[0.95] mb-16 relative">
-                Gerel Ma <br/>
+                Gerel Ma<br/>
                 <span class="relative inline-block mt-2">
                     <span class="relative z-10 text-[#8b5cf6]">Sama Business</span>
                     <!-- Hand-drawn underline effect exactly like screenshot -->
