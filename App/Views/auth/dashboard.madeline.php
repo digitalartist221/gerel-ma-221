@@ -5,10 +5,10 @@
 
 <div class="space-y-10 animate-in fade-in duration-700">
     <!-- Header Hero -->
-    <header class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+    <header class="flex flex-col lg:flex-row justify-between items-center gap-6">
         <!-- Title Block -->
-        <div class="shrink-0">
-            <h1 class="text-5xl font-black text-slate-900 tracking-tighter mb-2">Synthèse <span class="text-brand-500">Business.</span></h1>
+        <div class="shrink-0 self-center">
+            <h1 class="text-5xl font-black text-slate-900 tracking-tighter mb-1">Synthèse <span class="text-brand-500">Business.</span></h1>
             <p class="text-slate-400 font-bold uppercase tracking-[0.2em] text-[10px]">Intelligence financière & Pilotage en temps réel</p>
         </div>
 
