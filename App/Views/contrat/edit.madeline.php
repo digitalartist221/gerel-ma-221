@@ -4,7 +4,6 @@
 
 @def('extra_head')
 <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
-<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
 <style>
     .ql-container { border-bottom-left-radius: 2rem !important; border-bottom-right-radius: 2rem !important; border: none !important; font-family: inherit; }
     .ql-toolbar { border-top-left-radius: 2rem; border-top-right-radius: 2rem; border: none !important; background: #f9fafb; padding: 15px !important; }
@@ -261,6 +260,7 @@
     </form>
 </div>
 
+<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
 <script>
 // ============================================================
 // Madeline Contrat Editor - JS Engine (Clauses)

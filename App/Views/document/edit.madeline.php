@@ -104,6 +104,13 @@
                                 </label>
                             </div>
                         </div>
+                        <div class="space-y-3">
+                            <label class="block text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 ml-6">Nature de Taxe (TVA / BRS)</label>
+                            <select name="tax_type" onchange="renderLines()" class="w-full bg-slate-50 border border-slate-50 rounded-3xl px-8 py-5 text-sm font-black text-slate-900 focus:bg-white focus:ring-4 focus:ring-brand-500/5 outline-none transition-all appearance-none cursor-pointer">
+                                <option value="TVA" {{ ($document && $document->brs_amount == 0) ? 'selected' : '' }}>TVA Ordinaire (18%)</option>
+                                <option value="BRS" {{ ($document && $document->brs_amount > 0) ? 'selected' : '' }}>Sénégal - BRS (5%)</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -202,13 +209,7 @@
     </form>
 </div>
 
-<!-- Tax Type Modal Logic (Sénégal) -->
-<div class="fixed top-8 left-1/2 -translate-x-1/2 z-[60]">
-    <select name="tax_type" onchange="renderLines()" class="bg-white border border-slate-100 rounded-full px-6 py-2.5 text-[9px] font-black uppercase tracking-widest text-slate-900 shadow-2xl shadow-slate-900/10 outline-none cursor-pointer">
-        <option value="TVA" {{ ($document && $document->brs_amount == 0) ? 'selected' : '' }}>Sénégal : TVA (18%)</option>
-        <option value="BRS" {{ ($document && $document->brs_amount > 0) ? 'selected' : '' }}>Sénégal : BRS (5%)</option>
-    </select>
-</div>
+
 
 <script>
 // ============================================================
