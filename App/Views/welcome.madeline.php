@@ -9,26 +9,92 @@
         <div class="w-[600px] h-[600px] bg-brand-200/50 rounded-full"></div>
     </div>
 
-    <div class="text-center max-w-4xl mx-auto mb-32">
-        <div class="inline-flex items-center gap-3 px-3 py-1.5 rounded-full bg-brand-50 border border-brand-100 text-brand-600 text-[10px] font-black uppercase tracking-[0.2em] mb-10">
-            Disponible dès maintenant — v1.0.0
-        </div>
-        <h1 class="text-7xl md:text-[8rem] font-black text-slate-900 tracking-[-0.05em] leading-[0.85] mb-16">
-            Gérez tout. <br><span class="text-brand-500 italic font-serif">Simplement.</span>
-        </h1>
-        <p class="text-2xl text-gray-400 font-medium leading-relaxed mb-16 max-w-2xl mx-auto">
-            Une expérience de gestion unifiée, ultra-fluide et minimaliste pour les visionnaires.
-        </p>
-        <div class="flex items-center justify-center gap-6">
-            <a href="/register" class="px-12 py-6 rounded-full btn-dark text-base font-bold shadow-2xl shadow-black/20 inline-flex items-center gap-3">
-                Lancer l'expérience
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-            </a>
-            <a href="/demo" class="px-12 py-6 rounded-full bg-white border border-gray-100 text-gray-600 text-base font-bold hover:bg-gray-50 transition-all">
-                Voir la Démo
-            </a>
+    <div class="max-w-7xl mx-auto px-6 mb-32 relative z-10 w-full">
+        <div class="flex flex-col lg:flex-row items-center gap-20">
+            <!-- Left Content -->
+            <div class="flex-1 text-left w-full">
+                <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-brand-50 border border-brand-100 text-brand-600 text-[10px] font-black uppercase tracking-[0.2em] mb-10 shadow-sm">
+                    Gerel Ma Business Suite
+                </div>
+                
+                <h1 class="text-6xl md:text-[6.5rem] font-black text-slate-900 tracking-tighter leading-[0.9] mb-12">
+                    Conçu pour les <br>
+                    <span class="text-brand-500">entrepreneurs</span><br>
+                    <span class="text-slate-300">africains.</span>
+                </h1>
+                
+                <div class="flex flex-wrap items-center gap-4 mb-16">
+                    <span class="px-6 py-3 rounded-full bg-slate-900 text-white text-xs font-black uppercase tracking-widest flex items-center gap-3 shadow-xl shadow-black/10 notebook-edge">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                        Rapide & Minimal
+                    </span>
+                    <span class="px-6 py-3 rounded-full bg-slate-50 border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest flex items-center gap-3">
+                        <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                        Sécurisé
+                    </span>
+                    <span class="px-6 py-3 rounded-full bg-amber-50 border border-amber-100 text-amber-600 text-xs font-black uppercase tracking-widest flex items-center gap-3">
+                        🇸🇳 Made in Dakar
+                    </span>
+                </div>
+
+                <div class="flex items-center gap-6">
+                    <a href="#waitlist" class="px-12 py-6 rounded-full bg-brand-600 text-white text-sm font-black uppercase tracking-widest hover:bg-brand-500 transition-all shadow-2xl shadow-brand-500/20 inline-flex items-center gap-3">
+                        Lancer l'expérience
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Right Graphic (GoalBucket abstract preview) -->
+            <div class="flex-[0.8] relative w-full hidden lg:block">
+                <div class="absolute inset-0 bg-gradient-to-br from-brand-400/40 via-rose-400/20 to-amber-300/30 rounded-full blur-[100px] -z-10"></div>
+                
+                <div class="relative w-full rounded-[4rem] bg-white border border-slate-100 p-8 shadow-2xl shadow-slate-200/50 notebook-edge hover:-translate-y-4 transition-transform duration-700">
+                    <div class="floating-deco -right-6 -top-6 text-brand-500/20 text-6xl">✦</div>
+                    
+                    <div class="space-y-6">
+                        <div class="flex items-center justify-between mb-8">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center">
+                                    <div class="w-3 h-3 bg-brand-500 rounded-full"></div>
+                                </div>
+                                <div>
+                                    <div class="h-2 w-20 bg-slate-200 rounded-full mb-1"></div>
+                                    <div class="h-2 w-12 bg-slate-100 rounded-full"></div>
+                                </div>
+                            </div>
+                            <div class="px-4 py-1.5 bg-emerald-50 text-emerald-500 rounded-full text-[9px] font-black uppercase">+12%</div>
+                        </div>
+                        
+                        <div class="p-8 bg-slate-900 rounded-[2.5rem] text-white relative overflow-hidden group">
+                            <div class="absolute -right-10 -top-10 w-32 h-32 bg-brand-500/30 rounded-full blur-2xl group-hover:bg-rose-500/30 transition-all"></div>
+                            <div class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Chiffre d'Affaires</div>
+                            <div class="text-3xl font-black tracking-tighter mb-4">4 250 000 <span class="text-sm font-normal text-slate-500">XOF</span></div>
+                            <div class="h-16 w-full mt-4 flex items-end gap-2">
+                                <div class="w-full bg-white/10 rounded-t-lg h-[40%]"></div>
+                                <div class="w-full bg-white/10 rounded-t-lg h-[60%]"></div>
+                                <div class="w-full bg-brand-500 rounded-t-lg h-[100%]"></div>
+                                <div class="w-full bg-white/10 rounded-t-lg h-[80%]"></div>
+                                <div class="w-full bg-white/10 rounded-t-lg h-[50%]"></div>
+                            </div>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="p-6 bg-rose-50 rounded-3xl border border-rose-100 text-rose-600">
+                                <div class="text-[9px] font-black uppercase tracking-widest mb-1">Factures Payées</div>
+                                <div class="text-2xl font-black">24</div>
+                            </div>
+                            <div class="p-6 bg-slate-50 rounded-3xl border border-slate-100 text-slate-600">
+                                <div class="text-[9px] font-black uppercase tracking-widest mb-1">Clients Actifs</div>
+                                <div class="text-2xl font-black">156</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
+
 
     <!-- Bento Features Section -->
     <section class="max-w-6xl mx-auto px-6 mb-32 z-10 relative">
