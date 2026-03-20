@@ -6,6 +6,7 @@ use App\Models\Mouvement;
 use App\Models\Client;
 use App\Models\Produit;
 use App\Models\Contrat;
+use App\Models\Entreprise;
 use Packages\View\MadelineView;
 
 /**
@@ -62,7 +63,7 @@ class DashboardController {
 
         // Autres entités (non filtrées temporellement pour les stats statiques)
         $clients = Client::fari();
-        $entreprises = \App\Models\Entreprise::fari();
+        $entreprises = Entreprise::fari();
 
         $revenus = 0;
         $depenses = 0;
@@ -189,8 +190,8 @@ class DashboardController {
         if ($entrepriseId !== 'all') {
             $mouvementsQuery .= " AND entreprise_id = :eid";
             $mouvementsParams['eid'] = $entrepriseId;
-            $entreprises = \App\Models\Entreprise::fari(['id' => $entrepriseId]);
-            if (!empty($entreprises)) $entreprise = $entreprises[0];
+            $found = Entreprise::fari(['id' => $entrepriseId]);
+            if (!empty($found)) $entreprise = $found[0];
         }
 
         $stmtMouv = $db->prepare($mouvementsQuery);
