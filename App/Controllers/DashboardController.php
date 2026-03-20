@@ -16,11 +16,53 @@ class DashboardController {
         if (session_status() === PHP_SESSION_NONE) session_start();
         $userName = $_SESSION['user_name'] ?? 'Utilisateur';
 
-        // Chargement des Mouvements de Caisse (Source de Vérité)
-        $mouvements = Mouvement::fari();
-        $docs = Document::fari();
-        $contrats = Contrat::fari();
+        // 1. Définition des filtres dynamiques (Période & Entreprise)
+        $period = $_GET['period'] ?? 'this_month';
+        $startDate = '1970-01-01';
+        $endDate = '2099-12-31';
+
+        if ($period === 'this_month') {
+            $startDate = date('Y-m-01');
+            $endDate = date('Y-m-t');
+        } elseif ($period === 'last_month') {
+            $startDate = date('Y-m-01', strtotime('first day of last month'));
+            $endDate = date('Y-m-t', strtotime('last day of last month'));
+        } elseif ($period === 'this_year') {
+            $startDate = date('Y-01-01');
+            $endDate = date('Y-12-31');
+        } elseif ($period === 'custom') {
+            $startDate = $_GET['start'] ?? $startDate;
+            $endDate = $_GET['end'] ?? $endDate;
+        }
+
+        $entrepriseId = $_GET['entreprise_id'] ?? 'all';
+        $db = Mouvement::getConnection();
+
+        // 2. Fetch filtré des Mouvements de Caisse
+        $mouvementsQuery = "SELECT * FROM mouvements WHERE date_mouvement BETWEEN :start AND :end";
+        $mouvementsParams = ['start' => $startDate, 'end' => $endDate];
+        if ($entrepriseId !== 'all') {
+            $mouvementsQuery .= " AND entreprise_id = :eid";
+            $mouvementsParams['eid'] = $entrepriseId;
+        }
+        $stmtMouv = $db->prepare($mouvementsQuery);
+        $stmtMouv->execute($mouvementsParams);
+        $mouvements = $stmtMouv->fetchAll(\PDO::FETCH_OBJ);
+
+        // Fetch filtré des Documents (Factures/Devis)
+        $docQuery = "SELECT * FROM documents WHERE date_doc BETWEEN :start AND :end";
+        $docParams = ['start' => $startDate, 'end' => $endDate];
+        if ($entrepriseId !== 'all') {
+            $docQuery .= " AND entreprise_id = :eid";
+            $docParams['eid'] = $entrepriseId;
+        }
+        $stmtDoc = $db->prepare($docQuery);
+        $stmtDoc->execute($docParams);
+        $docs = $stmtDoc->fetchAll(\PDO::FETCH_OBJ);
+
+        // Autres entités (non filtrées temporellement pour les stats statiques)
         $clients = Client::fari();
+        $entreprises = \App\Models\Entreprise::fari();
 
         $revenus = 0;
         $depenses = 0;
@@ -107,7 +149,77 @@ class DashboardController {
                 'values' => array_values($monthlyRevenues)
             ],
             'recentDocs' => array_slice($docs, 0, 5),
-            'topClients' => $top5Clients
+            'topClients' => $top5Clients,
+            'entreprises' => $entreprises,
+            'filters' => [
+                'period' => $period,
+                'entreprise_id' => $entrepriseId,
+                'start' => $startDate,
+                'end' => $endDate
+            ]
+        ]);
+    }
+
+    public function fiscalite() {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $entrepriseId = $_GET['entreprise_id'] ?? 'all';
+        $period = $_GET['period'] ?? 'this_month';
+        
+        $startDate = '1970-01-01';
+        $endDate = '2099-12-31';
+        if ($period === 'this_month') {
+            $startDate = date('Y-m-01');
+            $endDate = date('Y-m-t');
+        } elseif ($period === 'last_month') {
+            $startDate = date('Y-m-01', strtotime('first day of last month'));
+            $endDate = date('Y-m-t', strtotime('last day of last month'));
+        } elseif ($period === 'this_year') {
+            $startDate = date('Y-01-01');
+            $endDate = date('Y-12-31');
+        } elseif ($period === 'custom') {
+            $startDate = $_GET['start'] ?? $startDate;
+            $endDate = $_GET['end'] ?? $endDate;
+        }
+
+        $db = Mouvement::getConnection();
+        $mouvementsQuery = "SELECT * FROM mouvements WHERE date_mouvement BETWEEN :start AND :end";
+        $mouvementsParams = ['start' => $startDate, 'end' => $endDate];
+        
+        $entreprise = null;
+        if ($entrepriseId !== 'all') {
+            $mouvementsQuery .= " AND entreprise_id = :eid";
+            $mouvementsParams['eid'] = $entrepriseId;
+            $entreprises = \App\Models\Entreprise::fari(['id' => $entrepriseId]);
+            if (!empty($entreprises)) $entreprise = $entreprises[0];
+        }
+
+        $stmtMouv = $db->prepare($mouvementsQuery);
+        $stmtMouv->execute($mouvementsParams);
+        $mouvements = $stmtMouv->fetchAll(\PDO::FETCH_OBJ);
+
+        $ca_ht = 0;
+        $tva_collectee = 0;
+        $brs_retenue = 0;
+
+        foreach ($mouvements as $m) {
+            if ($m->type === 'entree') {
+                $ca_ht += ($m->montant - $m->tva_portion);
+                $tva_collectee += $m->tva_portion;
+                if (isset($m->brs_portion)) {
+                    $brs_retenue += $m->brs_portion;
+                }
+            }
+        }
+
+        return MadelineView::render('reports/rapport_fiscal', [
+            'entreprise' => $entreprise,
+            'startDate' => $startDate,
+            'endDate' => $endDate,
+            'period' => $period,
+            'ca_ht' => $ca_ht,
+            'tva_collectee' => $tva_collectee,
+            'brs_retenue' => $brs_retenue,
+            'total_ttc' => $ca_ht + $tva_collectee - $brs_retenue
         ]);
     }
 }
