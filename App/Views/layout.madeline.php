@@ -266,43 +266,38 @@
     <!-- =============================== -->
     <!-- PUBLIC View (Login/Register)    -->
     <!-- =============================== -->
-    <header class="fixed top-8 left-0 w-full z-50 px-10">
-        <nav class="max-w-5xl mx-auto flex items-center justify-between px-10 py-5 rounded-3xl glass shadow-2xl shadow-black/5">
+    <header class="fixed top-6 left-0 w-full z-50 px-6 md:px-10">
+        <nav class="max-w-6xl mx-auto flex items-center justify-between px-8 py-4 rounded-full glass shadow-xl shadow-black/5 bg-white/40 backdrop-blur-md border border-white/50">
             <a href="/" class="text-2xl font-black tracking-tighter flex items-center gap-3">
-                <div class="w-9 h-9 flex items-center justify-center">
-                    <div class="w-3 h-3 bg-brand-600 rounded-full"></div>
+                <div class="w-8 h-8 flex items-center justify-center">
+                    <div class="w-2.5 h-2.5 bg-brand-600 rounded-full"></div>
                 </div>
                 <span class="text-slate-900">Gerel Ma<span class="text-brand-600">.</span></span>
             </a>
-            <div class="flex items-center gap-10 text-xs font-black uppercase tracking-widest">
-                <a href="/login" class="text-slate-500 hover:text-brand-600 transition-colors">Accès Client</a>
-                <a href="/register" class="px-8 py-4 rounded-full bg-slate-900 text-white hover:bg-brand-600 transition-all shadow-xl shadow-brand-500/10">Essai Gratuit ↗</a>
+            <div class="flex items-center gap-8 text-[11px] font-black uppercase tracking-widest">
+                <a href="/login" class="text-slate-500 hover:text-brand-600 transition-colors">Client</a>
+                <a href="#waitlist" class="px-6 py-3 rounded-full bg-slate-900 text-white hover:bg-brand-600 transition-all shadow-lg hidden md:block">Accès Anticipé</a>
             </div>
         </nav>
     </header>
 
-    <main id="madeline-app" class="pt-32 px-10">
-        <div class="max-w-4xl mx-auto py-20">
+    <main id="madeline-app" class="w-full relative min-h-screen flex flex-col pt-0">
+        <div class="w-full flex-1">
             @biir('content')
         </div>
 
-        <footer class="py-20 max-w-4xl mx-auto border-t border-slate-100 mt-20">
-             <div class="text-[10px] font-black uppercase tracking-[0.4em] text-slate-300 mb-8">
-                Gerel Ma Business Suite — Conçu pour les entrepreneurs africains
-            </div>
-            <div class="flex flex-wrap items-center gap-x-12 gap-y-6 text-[9px] font-black uppercase tracking-widest text-slate-400">
-                <span class="flex items-center gap-2">
-                    <div class="w-1 h-1 rounded-full bg-slate-200"></div>
-                    Rapide & Minimal
-                </span>
-                <span class="flex items-center gap-2">
-                    <div class="w-1 h-1 rounded-full bg-slate-200"></div>
-                    Sécurisé
-                </span>
-                <span class="flex items-center gap-2">
-                    <div class="w-1 h-1 rounded-full bg-slate-200"></div>
-                    Made in Dakar
-                </span>
+        <footer class="py-12 border-t border-slate-100 mt-auto bg-white/50 backdrop-blur-sm relative z-20">
+            <div class="max-w-6xl mx-auto px-6 md:px-10 flex flex-col md:flex-row items-center justify-between gap-6">
+                 <div class="text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                    Gerel Ma Business Suite — Conçu pour les entrepreneurs africains
+                </div>
+                <div class="flex flex-wrap items-center gap-6 text-[8px] font-black text-slate-400 uppercase tracking-widest">
+                    <span>Rapide & Minimal</span>
+                    <div class="w-1 h-1 rounded-full bg-slate-300"></div>
+                    <span>Sécurisé</span>
+                    <div class="w-1 h-1 rounded-full bg-slate-300"></div>
+                    <span class="text-slate-500">Made in Dakar</span>
+                </div>
             </div>
         </footer>
     </main>

@@ -3,7 +3,7 @@
 @def('pageTitle')Inscription — Gerel Ma Business@jeexdef
 
 @def('content')
-<div class="min-h-[70vh] flex items-center justify-center">
+<div class="min-h-[80vh] flex items-start lg:items-center justify-center pt-32 pb-20">
     <div class="max-w-md w-full floating-card p-12 rounded-6xl border-gray-100">
         <div class="text-center mb-10">
             <h2 class="text-4xl font-extrabold text-[#050510] tracking-tight mb-4">Commencer.</h2>

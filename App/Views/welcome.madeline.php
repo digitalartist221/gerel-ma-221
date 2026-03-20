@@ -10,7 +10,7 @@
     </div>
 
     <!-- Centered Premium Hero Section -->
-    <div class="relative z-10 w-full -mt-10 lg:-mt-12 pb-40 px-6 overflow-hidden">
+    <div class="relative z-10 w-full pt-32 lg:pt-40 pb-32 px-6 overflow-hidden">
         <!-- Intense Background Glows -->
         <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[500px] bg-gradient-to-b from-brand-500/20 via-rose-500/10 to-transparent blur-[120px] -z-10 rounded-full"></div>
         
