@@ -110,6 +110,7 @@
 </div>
 
 <script>
+(function() {
     // Signature Pad logic for Client View
     const clientCanvas = document.getElementById('client-signature-pad');
     if (clientCanvas) {
@@ -157,5 +158,6 @@
             form.submit();
         };
     }
+})();
 </script>
 @jeexdef

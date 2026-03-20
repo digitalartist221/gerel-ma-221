@@ -263,6 +263,7 @@
 <link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.8/dist/trix.css">
 
 <script>
+(function() {
 // ============================================================
 // Madeline Contrat Editor - JS Engine (Clauses)
 // ============================================================
@@ -344,31 +345,30 @@ function renderLines() {
     document.getElementById('lines_json').value = JSON.stringify(lines);
 }
 
-function addLine() {
+window.addLine = function() {
     lines.push({ titre: '', description: '', article_id: null });
     renderLines();
-}
+};
 
-function removeLine(i) {
+window.removeLine = function(i) {
     lines.splice(i, 1);
     renderLines();
-}
+};
 
 // Trix updates its hidden input automatically, we just bind to the main contract text area
 document.getElementById('notes_field').addEventListener('trix-change', function(e) {
     // Hidden field is auto-updated by trix, we don't strictly need to do anything here
 });
 
-function updateLine(i, key, val) {
+window.updateLine = function(i, key, val) {
     if (lines[i]) {
         lines[i][key] = val;
-        // Don't re-render immediately for textareas to avoid losing focus, update JSON instead
         document.getElementById('lines_json').value = JSON.stringify(lines);
         if (key === 'titre') {
-            document.getElementById('display-clauses').textContent = lines.length; // Just updating UI logic
+            document.getElementById('display-clauses').textContent = lines.length;
         }
     }
-}
+};
 
 // ============================================================
 // Madeline Signature Pad Engine
@@ -433,14 +433,16 @@ if (canvas) {
     };
 }
 
-function setStatus(s) {
+window.setStatus = function(s) {
     document.getElementById('statut_field').value = s;
     document.getElementById('contrat-form').submit();
-}
+};
 
 function escHtml(s) {
     if (!s) return '';
     return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
+
+})();
 </script>
 @jeexdef
