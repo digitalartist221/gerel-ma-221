@@ -9,91 +9,116 @@
         <div class="w-[600px] h-[600px] bg-brand-200/50 rounded-full"></div>
     </div>
 
-    <div class="max-w-7xl mx-auto px-6 mb-32 relative z-10 w-full">
-        <div class="flex flex-col lg:flex-row items-center gap-20">
-            <!-- Left Content -->
-            <div class="flex-1 text-left w-full">
-                <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-brand-50 border border-brand-100 text-brand-600 text-[10px] font-black uppercase tracking-[0.2em] mb-10 shadow-sm">
-                    Gerel Ma Business Suite
-                </div>
-                
-                <h1 class="text-6xl md:text-[6.5rem] font-black text-slate-900 tracking-tighter leading-[0.9] mb-12">
-                    Conçu pour les <br>
-                    <span class="text-brand-500">entrepreneurs</span><br>
-                    <span class="text-slate-300">africains.</span>
-                </h1>
-                
-                <div class="flex flex-wrap items-center gap-4 mb-16">
-                    <span class="px-6 py-3 rounded-full bg-slate-900 text-white text-xs font-black uppercase tracking-widest flex items-center gap-3 shadow-xl shadow-black/10 notebook-edge">
-                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-                        Rapide & Minimal
-                    </span>
-                    <span class="px-6 py-3 rounded-full bg-slate-50 border border-slate-200 text-slate-600 text-xs font-black uppercase tracking-widest flex items-center gap-3">
-                        <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                        Sécurisé
-                    </span>
-                    <span class="px-6 py-3 rounded-full bg-amber-50 border border-amber-100 text-amber-600 text-xs font-black uppercase tracking-widest flex items-center gap-3">
-                        🇸🇳 Made in Dakar
-                    </span>
-                </div>
-
-                <div class="flex items-center gap-6">
-                    <a href="#waitlist" class="px-12 py-6 rounded-full bg-brand-600 text-white text-sm font-black uppercase tracking-widest hover:bg-brand-500 transition-all shadow-2xl shadow-brand-500/20 inline-flex items-center gap-3">
-                        Lancer l'expérience
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
-                    </a>
-                </div>
+    <!-- Centered Premium Hero Section -->
+    <div class="relative z-10 w-full pt-10 pb-40 px-6 overflow-hidden">
+        <!-- Intense Background Glows -->
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[500px] bg-gradient-to-b from-brand-500/20 via-rose-500/10 to-transparent blur-[120px] -z-10 rounded-full"></div>
+        
+        <div class="max-w-5xl mx-auto text-center relative z-20">
+            <!-- Over-header badge -->
+            <div class="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/60 backdrop-blur-md border border-brand-100 shadow-sm text-brand-600 text-[10px] font-black uppercase tracking-[0.2em] mb-12 transform hover:scale-105 transition-all">
+                <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+                Gerel Ma Business Suite 1.0
             </div>
             
-            <!-- Right Graphic (GoalBucket abstract preview) -->
-            <div class="flex-[0.8] relative w-full hidden lg:block">
-                <div class="absolute inset-0 bg-gradient-to-br from-brand-400/40 via-rose-400/20 to-amber-300/30 rounded-full blur-[100px] -z-10"></div>
+            <!-- Massive Headline -->
+            <h1 class="text-6xl md:text-[7.5rem] font-black text-slate-900 tracking-[-0.04em] leading-[0.9] mb-12 relative">
+                Conçu pour les <br/>
+                <span class="relative inline-block mt-4 md:mt-0">
+                    <span class="relative z-10 text-brand-600">entrepreneurs</span>
+                    <!-- Hand-drawn underline effect -->
+                    <svg class="absolute w-full h-8 -bottom-4 left-0 -z-10 text-rose-300 opacity-70" viewBox="0 0 200 20" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 15Q50 5 100 12T198 8" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>
+                </span> <br/>
+                <span class="text-slate-300">africains.</span>
                 
-                <div class="relative w-full rounded-[4rem] bg-white border border-slate-100 p-8 shadow-2xl shadow-slate-200/50 notebook-edge hover:-translate-y-4 transition-transform duration-700">
-                    <div class="floating-deco -right-6 -top-6 text-brand-500/20 text-6xl">✦</div>
+                <!-- Floating Icons in the title space -->
+                <div class="floating-deco -left-10 top-0 text-brand-300/40 text-6xl rotate-12">✦</div>
+                <div class="floating-deco right-0 bottom-10 text-rose-300/40 text-8xl -rotate-12">✻</div>
+            </h1>
+            
+            <!-- Feature Pills (Centered) -->
+            <div class="flex flex-wrap items-center justify-center gap-4 mb-16">
+                <span class="px-6 py-3 rounded-full bg-white border border-slate-100 text-slate-700 text-[11px] font-black uppercase tracking-widest flex items-center gap-3 shadow-xl shadow-slate-200/50 hover:-translate-y-1 transition-transform">
+                    <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    Rapide & Minimal
+                </span>
+                <span class="px-6 py-3 rounded-full bg-slate-900 text-white text-[11px] font-black uppercase tracking-widest flex items-center gap-3 shadow-2xl shadow-black/20 hover:-translate-y-1 transition-transform notebook-edge border border-slate-700">
+                    <svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                    Sécurisé
+                </span>
+                <span class="px-6 py-3 rounded-full bg-amber-50 border border-amber-200 text-amber-600 text-[11px] font-black uppercase tracking-widest flex items-center gap-3 shadow-lg shadow-amber-500/10 hover:-translate-y-1 transition-transform">
+                    🇸🇳 Made in Dakar
+                </span>
+            </div>
+
+            <!-- Call to action -->
+            <div class="flex justify-center mb-24">
+                <a href="#waitlist" class="px-12 py-6 rounded-full bg-brand-600 text-white text-sm font-black uppercase tracking-widest hover:bg-brand-500 hover:scale-105 transition-all shadow-[0_0_40px_-10px_rgba(139,92,246,0.6)] inline-flex items-center gap-3 group">
+                    Lancer l'expérience
+                    <svg class="w-5 h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14 5l7 7m0 0l-7 7m7-7H3"/></svg>
+                </a>
+            </div>
+            
+            <!-- Majestic Dashboard Abstract Preview -->
+            <div class="relative w-full max-w-6xl mx-auto rounded-[3.5rem] md:rounded-[4.5rem] bg-white border border-slate-100 p-4 md:p-8 shadow-[0_60px_100px_-20px_rgba(0,0,0,0.08)] notebook-edge">
+                <!-- Inner Dashboard Frame -->
+                <div class="bg-slate-50 rounded-[2.5rem] md:rounded-[3.5rem] border border-slate-100 aspect-[16/9] md:aspect-[21/9] overflow-hidden relative flex flex-col pt-8 px-8">
                     
-                    <div class="space-y-6">
-                        <div class="flex items-center justify-between mb-8">
-                            <div class="flex items-center gap-3">
-                                <div class="w-10 h-10 rounded-full bg-brand-50 flex items-center justify-center">
-                                    <div class="w-3 h-3 bg-brand-500 rounded-full"></div>
-                                </div>
-                                <div>
-                                    <div class="h-2 w-20 bg-slate-200 rounded-full mb-1"></div>
-                                    <div class="h-2 w-12 bg-slate-100 rounded-full"></div>
-                                </div>
-                            </div>
-                            <div class="px-4 py-1.5 bg-emerald-50 text-emerald-500 rounded-full text-[9px] font-black uppercase">+12%</div>
-                        </div>
-                        
-                        <div class="p-8 bg-slate-900 rounded-[2.5rem] text-white relative overflow-hidden group">
-                            <div class="absolute -right-10 -top-10 w-32 h-32 bg-brand-500/30 rounded-full blur-2xl group-hover:bg-rose-500/30 transition-all"></div>
-                            <div class="text-[9px] font-black uppercase tracking-widest text-slate-400 mb-2">Chiffre d'Affaires</div>
-                            <div class="text-3xl font-black tracking-tighter mb-4">4 250 000 <span class="text-sm font-normal text-slate-500">XOF</span></div>
-                            <div class="h-16 w-full mt-4 flex items-end gap-2">
-                                <div class="w-full bg-white/10 rounded-t-lg h-[40%]"></div>
-                                <div class="w-full bg-white/10 rounded-t-lg h-[60%]"></div>
-                                <div class="w-full bg-brand-500 rounded-t-lg h-[100%]"></div>
-                                <div class="w-full bg-white/10 rounded-t-lg h-[80%]"></div>
-                                <div class="w-full bg-white/10 rounded-t-lg h-[50%]"></div>
+                    <!-- Simplified Dashboard Top Bar -->
+                    <div class="flex justify-between items-center mb-10 w-full animate-in fade-in slide-in-from-top-4 duration-700">
+                        <div class="flex items-center gap-4">
+                            <div class="w-10 h-10 rounded-2xl bg-white shadow-sm flex items-center justify-center"><div class="w-3 h-3 bg-brand-500 rounded-full"></div></div>
+                            <div class="space-y-2">
+                                <div class="w-24 h-2.5 bg-slate-200 rounded-full"></div>
+                                <div class="w-16 h-2 bg-slate-200/50 rounded-full"></div>
                             </div>
                         </div>
-                        
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="p-6 bg-rose-50 rounded-3xl border border-rose-100 text-rose-600">
-                                <div class="text-[9px] font-black uppercase tracking-widest mb-1">Factures Payées</div>
-                                <div class="text-2xl font-black">24</div>
+                        <div class="hidden md:flex gap-4">
+                            <div class="w-24 h-8 rounded-full bg-white shadow-sm"></div>
+                            <div class="w-10 h-10 rounded-full bg-brand-100"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Dashboard Cards Layout -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 h-full pb-8">
+                        <!-- Chart Card -->
+                        <div class="col-span-2 bg-white rounded-[2rem] shadow-sm border border-slate-100 p-8 flex flex-col justify-between animate-in fade-in slide-in-from-bottom-8 duration-700 delay-100">
+                            <div>
+                                <div class="w-32 h-3 bg-slate-100 rounded-full mb-3"></div>
+                                <div class="w-48 h-5 bg-slate-200 rounded-full"></div>
                             </div>
-                            <div class="p-6 bg-slate-50 rounded-3xl border border-slate-100 text-slate-600">
-                                <div class="text-[9px] font-black uppercase tracking-widest mb-1">Clients Actifs</div>
-                                <div class="text-2xl font-black">156</div>
+                            <div class="flex items-end gap-3 h-24 mt-8">
+                                <div class="w-full bg-brand-100 rounded-t-lg h-[40%]"></div>
+                                <div class="w-full bg-brand-200 rounded-t-lg h-[70%]"></div>
+                                <div class="w-full bg-brand-400 rounded-t-lg h-[50%]"></div>
+                                <div class="w-full bg-brand-500 rounded-t-lg h-[90%] shadow-lg shadow-brand-500/30"></div>
+                                <div class="w-full bg-brand-200 rounded-t-lg h-[60%]"></div>
+                            </div>
+                        </div>
+                        
+                        <!-- Stats Column -->
+                        <div class="space-y-6 flex flex-col h-full animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200">
+                            <div class="flex-1 bg-rose-50 rounded-[2rem] border border-rose-100 p-6 flex flex-col justify-center">
+                                <div class="w-20 h-2.5 bg-rose-200/60 rounded-full mb-4"></div>
+                                <div class="w-32 h-6 bg-rose-400 rounded-full"></div>
+                            </div>
+                            <div class="flex-1 bg-amber-50 rounded-[2rem] border border-amber-100 p-6 flex flex-col justify-center">
+                                <div class="w-24 h-2.5 bg-amber-200/60 rounded-full mb-4"></div>
+                                <div class="w-28 h-6 bg-amber-400 rounded-full"></div>
                             </div>
                         </div>
                     </div>
                 </div>
+                
+                <!-- Floating Decorative Overlays -->
+                <div class="absolute -top-10 -right-10 w-32 h-32 floating-card p-6 rounded-[2rem] bg-slate-900 text-white shadow-2xl rotate-6 animate-pulse hidden md:block border border-slate-700">
+                    <div class="text-[9px] font-black uppercase tracking-widest text-brand-400 mb-2">Performances</div>
+                    <div class="text-3xl font-black">+42%</div>
+                </div>
             </div>
         </div>
     </div>
+
 
 
     <!-- Bento Features Section -->
