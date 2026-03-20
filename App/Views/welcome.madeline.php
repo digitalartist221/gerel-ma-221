@@ -10,43 +10,41 @@
     </div>
 
     <!-- Centered Premium Hero Section -->
-    <div class="relative z-10 w-full pt-32 lg:pt-40 pb-32 px-6 overflow-hidden">
-        <!-- Intense Background Glows -->
-        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-4xl h-[500px] bg-gradient-to-b from-brand-500/20 via-rose-500/10 to-transparent blur-[120px] -z-10 rounded-full"></div>
+    <div class="relative z-10 w-full pt-32 lg:pt-40 pb-20 px-6 overflow-hidden">
         
         <div class="max-w-5xl mx-auto text-center relative z-20">
             <!-- Over-header badge -->
-            <div class="inline-flex items-center gap-3 px-5 py-2.5 rounded-full bg-white/60 backdrop-blur-md border border-brand-100 shadow-sm text-brand-600 text-[10px] font-black uppercase tracking-[0.2em] mb-12 transform hover:scale-105 transition-all">
-                <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+            <div class="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-white/80 backdrop-blur-md border border-brand-50 shadow-sm text-[#8b5cf6] text-[9px] font-black uppercase tracking-[0.2em] mb-12">
+                <span class="w-1.5 h-1.5 rounded-full bg-[#8b5cf6]"></span>
                 Conçu pour les entrepreneurs africains
             </div>
             
             <!-- Massive Headline -->
-            <h1 class="text-6xl md:text-[7.5rem] font-black text-slate-900 tracking-[-0.04em] leading-[0.9] mb-12 relative">
+            <h1 class="text-[5rem] md:text-[8rem] font-black text-[#050510] tracking-tighter leading-[0.95] mb-16 relative">
                 Gerel Ma <br/>
-                <span class="relative inline-block mt-4 md:mt-0">
-                    <span class="relative z-10 text-brand-600">Sama Business</span>
-                    <!-- Hand-drawn underline effect -->
-                    <svg class="absolute w-full h-8 -bottom-4 left-0 -z-10 text-rose-300 opacity-70" viewBox="0 0 200 20" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 15Q50 5 100 12T198 8" stroke="currentColor" stroke-width="4" stroke-linecap="round"/></svg>
+                <span class="relative inline-block mt-2">
+                    <span class="relative z-10 text-[#8b5cf6]">Sama Business</span>
+                    <!-- Hand-drawn underline effect exactly like screenshot -->
+                    <svg class="absolute w-[110%] h-8 -bottom-3 -left-[5%] -z-10 text-rose-300 opacity-90" viewBox="0 0 200 20" preserveAspectRatio="none" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M5 15Q50 5 100 12T195 8" stroke="currentColor" stroke-width="6" stroke-linecap="round"/></svg>
                 </span>
                 
                 <!-- Floating Icons in the title space -->
-                <div class="floating-deco -left-10 top-0 text-brand-300/40 text-6xl rotate-12">✦</div>
-                <div class="floating-deco right-0 bottom-10 text-rose-300/40 text-8xl -rotate-12">✻</div>
+                <div class="absolute -left-10 top-1/2 text-brand-300/30 text-8xl rotate-12 -z-10">✦</div>
+                <div class="absolute -right-0 bottom-10 text-rose-300/30 text-8xl -rotate-12 -z-10">✻</div>
             </h1>
             
-            <!-- Feature Pills (Centered) -->
-            <div class="flex flex-wrap items-center justify-center gap-4 mb-16">
-                <span class="px-6 py-3 rounded-full bg-white border border-slate-100 text-slate-700 text-[11px] font-black uppercase tracking-widest flex items-center gap-3 shadow-xl shadow-slate-200/50 hover:-translate-y-1 transition-transform">
-                    <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            <!-- Feature Pills (Centered as per screenshot) -->
+            <div class="flex flex-wrap items-center justify-center gap-4 mb-24">
+                <span class="px-6 py-3.5 rounded-full bg-white text-slate-800 text-[10px] font-black uppercase tracking-[0.15em] flex items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                    <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                     Rapide & Minimal
                 </span>
-                <span class="px-6 py-3 rounded-full bg-slate-900 text-white text-[11px] font-black uppercase tracking-widest flex items-center gap-3 shadow-2xl shadow-black/20 hover:-translate-y-1 transition-transform notebook-edge border border-slate-700">
-                    <svg class="w-5 h-5 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                <span class="px-6 py-3.5 rounded-full bg-[#050510] text-white text-[10px] font-black uppercase tracking-[0.15em] flex items-center gap-3 shadow-xl shadow-black/20">
+                    <svg class="w-4 h-4 text-rose-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
                     Sécurisé
                 </span>
-                <span class="px-6 py-3 rounded-full bg-amber-50 border border-amber-200 text-amber-600 text-[11px] font-black uppercase tracking-widest flex items-center gap-3 shadow-lg shadow-amber-500/10 hover:-translate-y-1 transition-transform">
-                    🇸🇳 Made in Dakar
+                <span class="px-6 py-3.5 rounded-full bg-white border border-amber-100 text-amber-500 text-[10px] font-black uppercase tracking-[0.15em] flex items-center gap-3 shadow-[0_8px_30px_rgb(0,0,0,0.04)]">
+                    <span class="text-amber-500 font-extrabold text-[10px]">SN</span> Made in Dakar
                 </span>
             </div>
 

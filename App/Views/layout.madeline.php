@@ -266,17 +266,15 @@
     <!-- =============================== -->
     <!-- PUBLIC View (Login/Register)    -->
     <!-- =============================== -->
-    <header class="fixed top-6 left-0 w-full z-50 px-6 md:px-10">
-        <nav class="max-w-6xl mx-auto flex items-center justify-between px-8 py-4 rounded-full glass shadow-xl shadow-black/5 bg-white/40 backdrop-blur-md border border-white/50">
-            <a href="/" class="text-2xl font-black tracking-tighter flex items-center gap-3">
-                <div class="w-8 h-8 flex items-center justify-center">
-                    <div class="w-2.5 h-2.5 bg-brand-600 rounded-full"></div>
-                </div>
-                <span class="text-slate-900">Gerel Ma<span class="text-brand-600">.</span></span>
+    <header class="fixed top-8 left-0 w-full z-50 px-4 md:px-10">
+        <nav class="max-w-4xl mx-auto flex items-center justify-between px-6 py-3 rounded-full bg-white shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-slate-100">
+            <a href="/" class="text-xl font-black tracking-tighter flex items-center gap-3">
+                <div class="w-2.5 h-2.5 bg-[#8b5cf6] rounded-full"></div>
+                <span class="text-[#050510]">Gerel Ma<span class="text-[#8b5cf6]">.</span></span>
             </a>
-            <div class="flex items-center gap-8 text-[11px] font-black uppercase tracking-widest">
-                <a href="/login" class="text-slate-500 hover:text-brand-600 transition-colors">Client</a>
-                <a href="#waitlist" class="px-6 py-3 rounded-full bg-slate-900 text-white hover:bg-brand-600 transition-all shadow-lg hidden md:block">Accès Anticipé</a>
+            <div class="flex items-center gap-6 text-[10px] font-black uppercase tracking-widest">
+                <a href="/login" class="text-slate-500 hover:text-[#8b5cf6] transition-colors">Client</a>
+                <a href="#waitlist" class="px-6 py-3 rounded-full bg-[#050510] text-white hover:bg-slate-800 transition-all shadow-md">Accès Anticipé</a>
             </div>
         </nav>
     </header>
