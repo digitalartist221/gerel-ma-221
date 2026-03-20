@@ -131,8 +131,8 @@ class ContratController {
             Contrat::weccit([
                 'statut' => 'signe',
                 'signed_by' => $name,
-                'signed_at' => date('Y-m-d H:i:s'),
-                'signature_hash' => hash('sha256', $token . $name . time())
+                'signed_client_at' => date('Y-m-d H:i:s'),
+                'signature_client_hash' => $req->input('signature_client_base64', '')
             ], ['id' => $contrat->id]);
         } elseif ($action === 'refuse') {
             Contrat::weccit(['statut' => 'annule'], ['id' => $contrat->id]);

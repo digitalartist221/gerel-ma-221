@@ -6,7 +6,7 @@
 <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
 <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
 <style>
-    .ql-container { border-bottom-left-radius: 2rem ! exaggeration-bottom-right-radius: 2rem; border: none !important; font-family: inherit; }
+    .ql-container { border-bottom-left-radius: 2rem !important; border-bottom-right-radius: 2rem !important; border: none !important; font-family: inherit; }
     .ql-toolbar { border-top-left-radius: 2rem; border-top-right-radius: 2rem; border: none !important; background: #f9fafb; padding: 15px !important; }
     .ql-editor { min-height: 200px; font-size: 14px; line-height: 1.6; color: #374151; }
     
@@ -161,12 +161,12 @@
                     <input type="hidden" name="notes" id="notes_field" value="{{ $contrat->notes ?? '' }}">
                 </div>
 
-                <!-- Signature Manuelle -->
+                <!-- Provider Signature -->
                 <div class="bg-white rounded-[2.5rem] border border-gray-100 p-10 shadow-sm space-y-6">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h3 class="text-sm font-black uppercase tracking-widest text-[#050510]">Signature Manuelle</h3>
-                            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">Signez directement sur l'écran si nécessaire</p>
+                            <h3 class="text-sm font-black uppercase tracking-widest text-[#050510]">Signature du Prestataire</h3>
+                            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">Votre signature officielle (Gerel Ma)</p>
                         </div>
                         <button type="button" onclick="clearSignature()" class="px-3 py-1.5 rounded-xl bg-gray-50 text-[9px] font-black uppercase tracking-widest text-gray-400 hover:bg-gray-100 transition-all">Effacer</button>
                     </div>
@@ -174,6 +174,36 @@
                         <canvas id="signature-pad"></canvas>
                         <input type="hidden" name="signature_base64" id="signature_field" value="{{ $contrat->signature_hash ?? '' }}">
                     </div>
+                </div>
+
+                <!-- Client Signature (ReadOnly) -->
+                <div class="bg-slate-50 rounded-[2.5rem] border border-gray-100 p-10 shadow-sm space-y-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h3 class="text-sm font-black uppercase tracking-widest text-slate-800">Signature du Client</h3>
+                            <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">Statut de la partie contractante</p>
+                        </div>
+                    </div>
+                    @ndax($contrat && $contrat->statut === 'signe')
+                        <div class="p-6 bg-white border border-emerald-100 rounded-3xl flex items-center gap-6">
+                            <div class="w-16 h-16 bg-emerald-50 rounded-2xl flex items-center justify-center text-emerald-500">
+                                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                            </div>
+                            <div>
+                                <p class="text-xs font-black uppercase tracking-widest text-emerald-600 mb-1">Signé par {{ $contrat->signed_by }}</p>
+                                <p class="text-[9px] font-mono text-emerald-400">Le {{ $contrat->signed_client_at }}</p>
+                                <p class="text-[8px] font-mono text-emerald-400/50 mt-1 truncate max-w-[200px]">Hash: {{ $contrat->signature_client_hash }}</p>
+                            </div>
+                            @ndax($contrat->signature_client_hash && str_contains($contrat->signature_client_hash, 'data:image'))
+                                <img src="{{ $contrat->signature_client_hash }}" class="h-16 ml-auto object-contain bg-white rounded-xl border border-gray-50" />
+                            @jeexndax
+                        </div>
+                    @jeexndax
+                    @ndax(!$contrat || $contrat->statut !== 'signe')
+                        <div class="py-8 text-center bg-white border border-gray-100 rounded-3xl">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-gray-400">En attente de signature cliente</p>
+                        </div>
+                    @jeexndax
                 </div>
             </div>
 
@@ -291,10 +321,7 @@ function renderLines() {
                 ${line.article_id ? `<div class="mt-2 inline-block px-2 text-[8px] font-black text-amber-500 bg-amber-50 rounded-md uppercase tracking-widest">Type #${line.article_id}</div>` : ''}
             </td>
             <td class="py-5 px-3 align-top border-l border-gray-100">
-                <textarea rows="3"
-                    onchange="updateLine(${i}, 'description', this.value)"
-                    placeholder="Contenu de la clause légale..."
-                    class="w-full bg-transparent border-0 p-0 text-xs font-medium focus:ring-0 text-gray-600 resize-y min-h-[60px] placeholder-gray-300 leading-relaxed">${escHtml(line.description || '')}</textarea>
+                <div id="editor-clause-${i}" class="bg-white rounded-xl border border-gray-100 clause-quill"></div>
             </td>
             <td class="py-5 text-right align-top">
                 <button type="button" onclick="removeLine(${i})"
@@ -304,6 +331,17 @@ function renderLines() {
             </td>
         `;
         body.appendChild(tr);
+
+        // Initialize Mini-Quill for this clause
+        var lineQuill = new Quill('#editor-clause-' + i, {
+            theme: 'snow',
+            placeholder: 'Contenu de la clause...',
+            modules: { toolbar: [ ['bold', 'italic'], [{'list': 'bullet'}] ] }
+        });
+        lineQuill.root.innerHTML = line.description || '';
+        lineQuill.on('text-change', function() {
+            updateLine(i, 'description', lineQuill.root.innerHTML);
+        });
     });
 
     document.getElementById('display-clauses').textContent = lines.length;

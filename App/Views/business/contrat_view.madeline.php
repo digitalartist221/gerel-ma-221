@@ -45,8 +45,8 @@
                         <span class="text-[9px] font-black uppercase bg-indigo-600 text-white px-3 py-1 rounded-full">Art. <?php echo $idx++; ?></span>
                         <h4 class="text-sm font-black text-slate-900 uppercase tracking-widest"><?php echo htmlspecialchars($line['titre'] ?? 'Clause'); ?></h4>
                     </div>
-                    <div class="text-xs text-slate-500 leading-relaxed font-medium text-justify whitespace-pre-line">
-                        <?php echo htmlspecialchars($line['description'] ?? ''); ?>
+                    <div class="text-xs text-slate-600 leading-relaxed font-medium text-justify w-full prose prose-sm max-w-none">
+                        {!! $line['description'] ?? '' !!}
                     </div>
                 </div>
                 <?php endforeach; ?>
@@ -62,16 +62,26 @@
                     En validant ce contrat, vous reconnaissez avoir pris connaissance de l'intégralité des clauses susmentionnées et y apportez votre consentement juridique permanent.
                 </div>
                 
-                <form action="/view/contrat/{{ $contrat->token_public }}/action" method="POST" class="space-y-8">
+                <form action="/view/contrat/{{ $contrat->token_public }}/action" method="POST" class="space-y-8" id="client-signature-form">
                     @csrf
                     <div class="space-y-4">
                         <label class="block text-[10px] text-slate-400 font-black uppercase tracking-widest ml-10">Signataire (Nom & Prénom)</label>
-                        <input type="text" name="signed_by" required placeholder="Signature calligraphiée..." class="w-full bg-white border border-slate-100 rounded-[2.5rem] px-10 py-7 text-2xl font-black text-slate-900 focus:ring-4 focus:ring-indigo-600/5 outline-none transition-all">
+                        <input type="text" name="signed_by" required placeholder="Votre Nom & Prénom..." class="w-full bg-white border border-slate-100 rounded-[2.5rem] px-10 py-7 text-2xl font-black text-slate-900 focus:ring-4 focus:ring-indigo-600/5 outline-none transition-all">
+                    </div>
+
+                    <!-- Client Signature Canvas -->
+                    <div class="space-y-4 bg-white p-8 rounded-[3rem] border border-slate-100 shadow-sm relative">
+                        <div class="flex items-center justify-between mb-2">
+                            <label class="block text-[10px] text-slate-400 font-black uppercase tracking-widest ml-4">Signature Manuelle</label>
+                            <button type="button" onclick="clearClientSignature()" class="px-4 py-2 rounded-xl bg-slate-50 text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-900 transition-all">Effacer</button>
+                        </div>
+                        <canvas id="client-signature-pad" class="w-full h-[200px] border-2 border-dashed border-indigo-50 rounded-3xl cursor-crosshair touch-none"></canvas>
+                        <input type="hidden" name="signature_client_base64" id="signature_client_field" value="">
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <button name="action" value="refuse" class="py-6 rounded-3xl border border-slate-100 text-[11px] font-black uppercase tracking-widest text-slate-300 hover:text-red-500 hover:border-red-500 transition-all">Décliner le projet</button>
-                        <button name="action" value="accept" class="py-6 rounded-3xl bg-indigo-600 text-white text-[11px] font-black uppercase tracking-widest shadow-xl shadow-indigo-600/20 hover:bg-slate-900 transition-all flex items-center justify-center gap-3">
+                        <button type="submit" name="action" value="refuse" class="py-6 rounded-3xl border border-slate-100 text-[11px] font-black uppercase tracking-widest text-slate-300 hover:text-red-500 hover:border-red-500 transition-all">Décliner le projet</button>
+                        <button type="button" onclick="submitClientSignature()" class="py-6 rounded-3xl bg-indigo-600 text-white text-[11px] font-black uppercase tracking-widest shadow-xl shadow-indigo-600/20 hover:bg-slate-900 transition-all flex items-center justify-center gap-3">
                             <span>Signer le contrat</span>
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
                         </button>
@@ -98,4 +108,54 @@
         </div>
     </div>
 </div>
+
+<script>
+    // Signature Pad logic for Client View
+    const clientCanvas = document.getElementById('client-signature-pad');
+    if (clientCanvas) {
+        const ctxClient = clientCanvas.getContext('2d');
+        let clientDrawing = false;
+
+        function resizeClientCanvas() {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            clientCanvas.width = clientCanvas.offsetWidth * ratio;
+            clientCanvas.height = clientCanvas.offsetHeight * ratio;
+            ctxClient.scale(ratio, ratio);
+            ctxClient.lineWidth = 2.5;
+            ctxClient.lineCap = 'round';
+            ctxClient.strokeStyle = '#050510';
+        }
+        
+        window.addEventListener('resize', resizeClientCanvas);
+        setTimeout(resizeClientCanvas, 500);
+
+        clientCanvas.addEventListener('mousedown', (e) => { clientDrawing = true; ctxClient.beginPath(); const rect = clientCanvas.getBoundingClientRect(); ctxClient.moveTo(e.clientX - rect.left, e.clientY - rect.top); });
+        clientCanvas.addEventListener('mousemove', (e) => { if(!clientDrawing)return; const rect = clientCanvas.getBoundingClientRect(); ctxClient.lineTo(e.clientX - rect.left, e.clientY - rect.top); ctxClient.stroke(); });
+        clientCanvas.addEventListener('mouseup', () => { clientDrawing = false; document.getElementById('signature_client_field').value = clientCanvas.toDataURL(); });
+        
+        clientCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); clientDrawing = true; ctxClient.beginPath(); const rect = clientCanvas.getBoundingClientRect(); ctxClient.moveTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top); });
+        clientCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); if(!clientDrawing)return; const rect = clientCanvas.getBoundingClientRect(); ctxClient.lineTo(e.touches[0].clientX - rect.left, e.touches[0].clientY - rect.top); ctxClient.stroke(); });
+        clientCanvas.addEventListener('touchend', () => { clientDrawing = false; document.getElementById('signature_client_field').value = clientCanvas.toDataURL(); });
+
+        window.clearClientSignature = function() {
+            ctxClient.clearRect(0, 0, clientCanvas.width, clientCanvas.height);
+            document.getElementById('signature_client_field').value = '';
+        };
+
+        window.submitClientSignature = function() {
+            if (!document.getElementById('signature_client_field').value) {
+                alert("Veuillez signer le contrat manuellement avant de valider.");
+                return;
+            }
+            // Dynamic form submission injection for "accept" action
+            const form = document.getElementById('client-signature-form');
+            const hidden = document.createElement('input');
+            hidden.type = 'hidden';
+            hidden.name = 'action';
+            hidden.value = 'accept';
+            form.appendChild(hidden);
+            form.submit();
+        };
+    }
+</script>
 @jeexdef

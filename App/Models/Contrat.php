@@ -29,4 +29,6 @@ class Contrat extends MadelineORM {
     public ?string $signed_at = null;
     public ?string $signed_by = null;
     public ?string $signature_hash = null;
+    public ?string $signature_client_hash = null;
+    public ?string $signed_client_at = null;
 }
