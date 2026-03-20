@@ -50,7 +50,7 @@ class DashboardController {
         $mouvements = $stmtMouv->fetchAll(\PDO::FETCH_OBJ);
 
         // Fetch filtré des Documents (Factures/Devis)
-        $docQuery = "SELECT * FROM documents WHERE date_doc BETWEEN :start AND :end";
+        $docQuery = "SELECT * FROM documents WHERE date_emission BETWEEN :start AND :end";
         $docParams = ['start' => $startDate, 'end' => $endDate];
         if ($entrepriseId !== 'all') {
             $docQuery .= " AND entreprise_id = :eid";
