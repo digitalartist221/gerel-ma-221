@@ -163,64 +163,64 @@ class DashboardController {
 
     public function fiscalite() {
         if (session_status() === PHP_SESSION_NONE) session_start();
+
+        // Fiscal year: always Jan 1 → Dec 31 of the selected year
+        $currentYear = (int)date('Y');
+        $selectedYear = (int)($_GET['year'] ?? $currentYear);
         $entrepriseId = $_GET['entreprise_id'] ?? 'all';
-        $period = $_GET['period'] ?? 'this_month';
-        
-        $startDate = '1970-01-01';
-        $endDate = '2099-12-31';
-        if ($period === 'this_month') {
-            $startDate = date('Y-m-01');
-            $endDate = date('Y-m-t');
-        } elseif ($period === 'last_month') {
-            $startDate = date('Y-m-01', strtotime('first day of last month'));
-            $endDate = date('Y-m-t', strtotime('last day of last month'));
-        } elseif ($period === 'this_year') {
-            $startDate = date('Y-01-01');
-            $endDate = date('Y-12-31');
-        } elseif ($period === 'custom') {
-            $startDate = $_GET['start'] ?? $startDate;
-            $endDate = $_GET['end'] ?? $endDate;
-        }
+
+        $startDate = "{$selectedYear}-01-01";
+        $endDate   = "{$selectedYear}-12-31";
+
+        // Selectable years: from 3 years back to current year
+        $availableYears = range($currentYear, $currentYear - 4);
 
         $db = Mouvement::getConnection();
         $mouvementsQuery = "SELECT * FROM mouvements WHERE date_mouvement BETWEEN :start AND :end";
         $mouvementsParams = ['start' => $startDate, 'end' => $endDate];
-        
-        $entreprise = null;
+
+        $entreprise  = null;
+        $entreprises = Entreprise::fari();
+
         if ($entrepriseId !== 'all') {
             $mouvementsQuery .= " AND entreprise_id = :eid";
             $mouvementsParams['eid'] = $entrepriseId;
-            $found = Entreprise::fari(['id' => $entrepriseId]);
-            if (!empty($found)) $entreprise = $found[0];
+            $found = array_filter($entreprises, fn($e) => $e->id == $entrepriseId);
+            if (!empty($found)) $entreprise = array_values($found)[0];
         }
 
         $stmtMouv = $db->prepare($mouvementsQuery);
         $stmtMouv->execute($mouvementsParams);
         $mouvements = $stmtMouv->fetchAll(\PDO::FETCH_OBJ);
 
-        $ca_ht = 0;
-        $tva_collectee = 0;
-        $brs_retenue = 0;
+        // Monthly breakdown for the chart
+        $monthlyCA  = array_fill(1, 12, 0);
+        $ca_ht = 0; $tva_collectee = 0; $brs_retenue = 0;
 
         foreach ($mouvements as $m) {
             if ($m->type === 'entree') {
-                $ca_ht += ($m->montant - $m->tva_portion);
-                $tva_collectee += $m->tva_portion;
-                if (isset($m->brs_portion)) {
-                    $brs_retenue += $m->brs_portion;
-                }
+                $net = $m->montant - $m->tva_portion;
+                $ca_ht          += $net;
+                $tva_collectee  += $m->tva_portion;
+                $brs_retenue    += $m->brs_portion ?? 0;
+                $month = (int)date('m', strtotime($m->date_mouvement));
+                $monthlyCA[$month] += $net;
             }
         }
 
         return MadelineView::render('reports/rapport_fiscal', [
-            'entreprise' => $entreprise,
-            'startDate' => $startDate,
-            'endDate' => $endDate,
-            'period' => $period,
-            'ca_ht' => $ca_ht,
-            'tva_collectee' => $tva_collectee,
-            'brs_retenue' => $brs_retenue,
-            'total_ttc' => $ca_ht + $tva_collectee - $brs_retenue
+            'entreprise'     => $entreprise,
+            'entreprises'    => $entreprises,
+            'selectedYear'   => $selectedYear,
+            'availableYears' => $availableYears,
+            'entrepriseId'   => $entrepriseId,
+            'startDate'      => $startDate,
+            'endDate'        => $endDate,
+            'ca_ht'          => $ca_ht,
+            'tva_collectee'  => $tva_collectee,
+            'brs_retenue'    => $brs_retenue,
+            'total_ttc'      => $ca_ht + $tva_collectee - $brs_retenue,
+            'monthlyCA'      => array_values($monthlyCA),
         ]);
     }
 }
