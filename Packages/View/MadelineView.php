@@ -5,8 +5,12 @@ class MadelineView {
     private static $blocks = [];
     private static $componentProps = [];
     private static $layout = null;
+    private static $isRawMode = false;
 
-    public static function render($view, $data = []) {
+    public static function render($view, $data = [], $isRaw = false) {
+        $previousRaw = self::$isRawMode;
+        if ($isRaw) self::$isRawMode = true;
+
         $viewFile = __DIR__ . '/../../App/Views/' . $view . '.madeline.php';
         if (!file_exists($viewFile)) {
             $viewFile = __DIR__ . '/../../App/Views/' . $view . '.php';
@@ -65,7 +69,7 @@ class MadelineView {
         // MODE TURBO : Si c'est une requête Madeline.js, on renvoie du JSON direct
         // Note: On le fait uniquement à la fin du rendu racine (quand previousLayout est null)
         // ou si aucun layout n'est utilisé, pour s'assurer d'avoir toutes les sections.
-        if ($previousLayout === null && isset($_SERVER['HTTP_X_MADELINE_REQUEST'])) {
+        if ($previousLayout === null && !self::$isRawMode && isset($_SERVER['HTTP_X_MADELINE_REQUEST'])) {
             header('Content-Type: application/json');
             echo json_encode([
                 'madeline' => true,
@@ -83,6 +87,7 @@ class MadelineView {
 
         // Restaurer le layout précédent pour remonter la pile d'héritage
         self::$layout = $previousLayout;
+        self::$isRawMode = $previousRaw;
         
         return $output;
     }
@@ -126,12 +131,12 @@ class MadelineView {
 
         // Directives Wolof
         
-        // @indi('layout') -> Include/Extend (Deferred)
-        $content = preg_replace('/@indi\([\'"](.+?)[\'"]\)/', '<?php \Packages\View\MadelineView::setLayout(\'$1\'); ?>', $content);
+        // @indi('layout') or @use('layout') -> Include/Extend (Deferred)
+        $content = preg_replace('/@(indi|use)\([\'"](.+?)[\'"]\)/', '<?php \Packages\View\MadelineView::setLayout(\'$2\'); ?>', $content);
         
-        // @baat($items as $item) -> foreach
-        $content = preg_replace('/@baat\(((?:[^)(]+|\([^)(]*\))*)\)/', '<?php foreach($1): ?>', $content);
-        $content = str_replace('@jeexbaat', '<?php endforeach; ?>', $content);
+        // @baat($items as $item) or @mboloo($items as $item) -> foreach
+        $content = preg_replace('/@(baat|mboloo)\(((?:[^)(]+|\([^)(]*\))*)\)/', '<?php foreach($2): ?>', $content);
+        $content = str_replace(['@jeexbaat', '@jeexmboloo'], '<?php endforeach; ?>', $content);
 
         // @ndax($condition) -> if
         $content = preg_replace('/@ndax\(((?:[^)(]+|\([^)(]*\))*)\)/', '<?php if($1): ?>', $content);
@@ -144,11 +149,11 @@ class MadelineView {
         $content = str_replace('@jeexdef', '<?php \Packages\View\MadelineView::endSection(); ?>', $content);
 
         // Directives d'Authentification : @miingi fi (ils sont là/présents)
-        $content = str_replace('@miingi fi', '<?php if(isset($_SESSION[\'user\'])): ?>', $content);
+        $content = str_replace('@miingi fi', '<?php if(isset($_SESSION[\'user_id\'])): ?>', $content);
         $content = str_replace('@jeexmiingi', '<?php endif; ?>', $content);
 
-        // @biir('content') -> yield section content
-        $content = preg_replace('/@biir\([\'"](.+?)[\'"]\)/', '<?php echo \Packages\View\MadelineView::yieldContent(\'$1\'); ?>', $content);
+        // @biir('content', 'Default') -> yield section content with optional default
+        $content = preg_replace('/@biir\([\'"](.+?)[\'"](?:\s*,\s*[\'"](.*?)[\'"])?\)/', '<?php echo \Packages\View\MadelineView::yieldContent(\'$1\', \'$2\'); ?>', $content);
 
         // Gestion des Composants: <x-alert type="danger">Slot content</x-alert>
         $content = self::compileComponents($content);
@@ -163,6 +168,9 @@ class MadelineView {
         
         // Echo non-échappé {!! $var !!}
         $content = preg_replace('/\{!!\s*(.+?)\s*!!\}/', '<?php echo $1 ?? \'\'; ?>', $content);
+
+        // Directive spéciale @json pour injecter proprement des variables en JSON (ex: pour JS)
+        $content = preg_replace('/@json\(((?:[^)(]+|\([^)(]*\))*)\)/', '<?php echo json_encode($1); ?>', $content);
 
         // ================================================================
         // RESTAURATION : Réinjecter les blocs <pre> protégés
@@ -244,7 +252,7 @@ class MadelineView {
         self::$componentProps[$name] .= ob_get_clean();
     }
 
-    public static function yieldContent($name) {
-        return self::$componentProps[$name] ?? '';
+    public static function yieldContent($name, $default = '') {
+        return self::$componentProps[$name] ?? $default;
     }
 }

@@ -146,6 +146,8 @@ $dbHost = Config::get('database.host', 'localhost');</code></pre>
                         <tr><td class="py-4"><code>@indi(...)</code></td><td class="py-4">Héritage de layout (Extends).</td></tr>
                         <tr><td class="py-4"><code>{{ $var }}</code></td><td class="py-4">Affichage échappé (Anti-XSS).</td></tr>
                         <tr><td class="py-4"><code>{!! $var !!}</code></td><td class="py-4">Affichage brut (HTML non-échappé).</td></tr>
+                        <tr><td class="py-4"><code>@json($var)</code></td><td class="py-4">Encodage JSON automatique (Idéal pour JavaScript natif).</td></tr>
+                        <tr><td class="py-4"><code>@csrf</code></td><td class="py-4">Génération d'un token CSRF caché pour sécuriser les formulaires POST.</td></tr>
                     </tbody>
                 </table>
             </div>

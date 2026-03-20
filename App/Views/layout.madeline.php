@@ -3,215 +3,364 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@biir('pageTitle') — {{ \Core\Config::get('app.name', 'Madeline Framework') }}</title>
-    <meta name="description" content="{{ \Core\Config::get('app.description', 'Infrastructure PHP 8.3 Industrielle') }}">
-    
-    <!-- Core Scripts -->
-    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
-    <script src="/js/madeline.js"></script>
-    
-    <!-- Modern Typography -->
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    
-    <script>
-        // Theme Initialization (Blocking to avoid flicker)
-        (function() {
-            const theme = localStorage.getItem('madeline-theme') || 'dark';
-            if (theme === 'dark') document.documentElement.classList.add('dark');
-        })();
+    <title>{{ \Core\Config::get('app.name', 'Madeline') }} — {{ \Core\Config::get('app.description', 'Business Suite') }}</title>
 
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
         tailwind.config = {
-            darkMode: 'class',
             theme: {
                 extend: {
-                    fontFamily: {
-                        sans: ['Plus Jakarta Sans', 'sans-serif'],
-                        serif: ['Playfair Display', 'serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
-                    },
+                    fontFamily: { sans: ['Plus Jakarta Sans', 'sans-serif'] },
                     colors: {
-                        brand: {
-                            50: '#f5f3ff', 100: '#ede9fe', 200: '#ddd6fe', 300: '#c4b5fd',
-                            400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9',
-                            800: '#5b21b6', 900: '#4c1d95',
-                        }
+                        brand: { 50:'#f5f3ff', 100:'#ede9fe', 200:'#ddd6fe', 300:'#c4b5fd', 400:'#a78bfa', 500:'#8b5cf6', 600:'#7c3aed', 700:'#6d28d9', 800:'#5b21b6', 900:'#4c1d95' },
+                        rose: { 400: '#ff6b95', 500: '#ff4d7d' },
+                        amber: { 400: '#ffc107', 500: '#ffb300' },
+                        ui: { bg:'#FFFFFF', card:'#F9FAFB', text:'#050510' }
                     },
-                    animation: {
-                        'pulse-slow': 'pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                        'float': 'float 6s ease-in-out infinite',
-                    },
-                    keyframes: {
-                        float: {
-                            '0%, 100%': { transform: 'translateY(0)' },
-                            '50%': { transform: 'translateY(-20px)' },
-                        }
-                    }
+                    borderRadius: { '4xl':'2rem', '5xl':'2.5rem', '6xl':'3rem' }
                 }
             }
         }
     </script>
 
     <style>
-        :root {
-            --bg-color: #ffffff;
-            --text-color: #1f2937;
-            --glass-bg: rgba(255, 255, 255, 0.8);
-            --border-color: rgba(0, 0, 0, 0.05);
+        body { background-color: #F8FAFC; color: #0F172A; -webkit-font-smoothing: antialiased; overflow-x: hidden; font-family: 'Outfit', sans-serif; }
+        .mesh-gradient-bg { position:fixed; top:0; left:0; width:100%; height:100%; z-index:-1;
+            background: radial-gradient(at 0% 0%, rgba(139,92,246,0.1) 0px, transparent 50%),
+                        radial-gradient(at 100% 0%, rgba(255,107,149,0.08) 0px, transparent 50%),
+                        radial-gradient(at 50% 100%, rgba(255,193,7,0.05) 0px, transparent 50%); }
+        
+        .floating-deco { position: absolute; pointer-events: none; opacity: 0.4; z-index: 0; }
+        .notebook-edge { position: relative; }
+        .notebook-edge::after { 
+            content: ''; position: absolute; left: -8px; top: 20%; height: 60%; width: 4px;
+            background: repeating-linear-gradient(to bottom, #E2E8F0, #E2E8F0 4px, transparent 4px, transparent 12px);
+            border-radius: 2px;
         }
-
-        .dark {
-            --bg-color: #030305;
-            --text-color: #e5e7eb;
-            --glass-bg: rgba(3, 3, 5, 0.75);
-            --border-color: rgba(255, 255, 255, 0.05);
-        }
-
-        body { 
-            background-color: var(--bg-color); 
-            color: var(--text-color); 
-            overflow-x: hidden; 
-            scroll-behavior: smooth;
-            transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s;
-        }
-
-        /* Custom Scrollbar Premium */
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.2); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.5); }
-
-        /* Glassmorphism Classes */
-        .glass-header {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border-color);
-            transition: background 0.4s, border-color 0.4s;
-        }
-
-        /* Dynamic Background Blobs */
-        .blob {
+        
+        .glass-sidebar {
             position: fixed;
-            width: 600px;
-            height: 600px;
-            border-radius: 50%;
-            filter: blur(140px);
-            z-index: -1;
-            opacity: 0.15;
-            pointer-events: none;
-            transition: opacity 1s;
+            top: 1.5rem;
+            left: 1.5rem;
+            bottom: 1.5rem;
+            width: 280px;
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.05);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .dark .blob { opacity: 0.08; }
+        @media (max-width: 1024px) {
+            .glass-sidebar { transform: translateX(-120%); }
+            .glass-sidebar.show { transform: translateX(0); }
+            main#madeline-app { padding-left: 0 !important; }
+        }
 
-        .blob-1 { top: -200px; left: -100px; background: #6d28d9; }
-        .blob-2 { bottom: -200px; right: -100px; background: #3b82f6; }
+        .nav-link { 
+            display:flex; align-items:center; gap:1rem; padding:1rem 1.25rem; border-radius:1.25rem; 
+            transition:all 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            color: #64748b;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+        .nav-link:hover { background: rgba(139, 92, 246, 0.05); color: #8b5cf6; transform: translateX(4px); }
+        .nav-link.active { background: #8b5cf6; color: white; box-shadow: 0 10px 20px -5px rgba(139, 92, 246, 0.4); }
+        .nav-link svg { width: 1.25rem; height: 1.25rem; transition: transform 0.3s; }
+        .nav-link.active svg { transform: scale(1.1); color: white; }
+        
+        .sidebar-section-label { padding:0 1.25rem; font-size:9px; font-weight:900; text-transform:uppercase; letter-spacing:0.2em; color:#94a3b8; margin-bottom:0.75rem; margin-top: 2rem; }
+        
+        #madeline-loader { position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg, #8b5cf6, #3b82f6); z-index:9999; width:0; transition:width 0.3s ease; }
 
-        /* Theme Toggle Button */
-        .theme-toggle-btn {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            display: flex;
+        /* Mobile Trigger */
+        .mobile-trigger {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 4rem;
+            height: 4rem;
+            border-radius: 2rem;
+            background: #0f172a;
+            color: white;
+            display: none;
             align-items: center;
             justify-content: center;
-            border: 1px solid var(--border-color);
-            background: var(--glass-bg);
-            color: var(--text-color);
-            transition: all 0.3s cubic-bezier(0.1, 0.5, 0.5, 1);
-            cursor: pointer;
+            z-index: 150;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
         }
-        .theme-toggle-btn:hover {
-            transform: scale(1.1) rotate(12deg);
-            border-color: rgba(139, 92, 246, 0.5);
-            color: #8b5cf6;
+        @media (max-width: 1024px) { .mobile-trigger { display: flex; } }
+        /* Toast Notifications */
+        #toast-container { position: fixed; top: 2rem; right: 2rem; z-index: 1000; display: flex; flex-direction: column; gap: 0.75rem; pointer-events: none; }
+        .toast { 
+            pointer-events: auto; padding: 1rem 1.5rem; border-radius: 1.25rem; background: #0f172a; color: white; 
+            font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em;
+            display: flex; align-items: center; gap: 0.75rem; min-width: 280px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2); transform: translateX(120%); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+        .toast.show { transform: translateX(0); }
+        .toast.success { border-left: 4px solid #10b981; }
+        .toast.error { border-left: 4px solid #ef4444; }
+        .toast.warning { border-left: 4px solid #f59e0b; }
+
+        /* Premium Scrollbars */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(15, 23, 42, 0.1); border-radius: 10px; transition: background 0.3s; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.3); }
+        
+        /* Firefox */
+        * { scrollbar-width: thin; scrollbar-color: rgba(15, 23, 42, 0.1) transparent; }
+        
+        html { scrollbar-gutter: stable; scroll-behavior: smooth; }
     </style>
     @biir('head')
 </head>
-<body class="selection:bg-brand-500/30">
+<body>
+<div class="mesh-gradient-bg"></div>
+    <div id="toast-container"></div>
+    @ndax(isset($_SESSION['success']))
+        <div data-toast="{{ $_SESSION['success'] }}" data-toast-type="success"></div>
+        <?php unset($_SESSION['success']); ?>
+    @jeexndax
+    @ndax(isset($_SESSION['error']))
+        <div data-toast="{{ $_SESSION['error'] }}" data-toast-type="error"></div>
+        <?php unset($_SESSION['error']); ?>
+    @jeexndax
+    <div id="madeline-loader"></div>
 
-    <!-- Ambient Background -->
-    <div class="blob blob-1 animate-pulse-slow"></div>
-    <div class="blob blob-2 animate-pulse-slow" style="animation-delay: 2s"></div>
+@miingi fi
+    <!-- =============================== -->
+    <!-- SIDEBAR — Floating Glass Design -->
+    <!-- =============================== -->
+    <aside class="glass-sidebar flex flex-col overflow-hidden">
 
-    <!-- Master Header -->
-    <header class="sticky top-0 z-[100] glass-header">
-        <div class="max-w-[1400px] mx-auto px-6 h-20 flex items-center justify-between">
-            <div class="flex items-center gap-10">
-                <a href="/" class="flex items-center group transition-transform hover:scale-[1.02]">
-                    <span class="font-serif italic text-2xl tracking-tight text-gray-900 dark:text-white/90 group-hover:text-brand-500 transition-colors">{{ \Core\Config::get('app.name', 'Madeline') }}</span>
-                </a>
-                
-                <nav class="hidden lg:flex items-center gap-2">
-                    <a href="/docs" class="px-5 py-2 text-sm font-medium text-gray-500 dark:text-white/50 hover:text-brand-600 dark:hover:text-white transition-all hover:bg-gray-100 dark:hover:bg-white/[0.03] rounded-full">Guide Framework</a>
-                    <a href="/api/docs/ui" class="px-5 py-2 text-sm font-medium text-gray-500 dark:text-white/50 hover:text-brand-600 dark:hover:text-white transition-all hover:bg-gray-100 dark:hover:bg-white/[0.03] rounded-full">Console API</a>
-                </nav>
+        <!-- Header / Logo -->
+        <div class="px-8 py-10 flex items-center gap-4">
+            <div class="w-11 h-11 flex items-center justify-center">
+                <div class="w-3 h-3 bg-brand-500 rounded-full animate-pulse"></div>
             </div>
-
-            <div class="flex items-center gap-4 lg:gap-6">
-                <!-- Theme Switcher -->
-                <button onclick="Madeline.toggleTheme()" class="theme-toggle-btn" aria-label="Toggle Theme">
-                    <svg class="dark:hidden w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
-                    <svg class="hidden dark:block w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M16.243 16.243l.707.707M7.05 7.05l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"></path></svg>
-                </button>
-
-                <a href="https://github.com" target="_blank" class="hidden sm:flex text-gray-400 dark:text-white/30 hover:text-brand-500 dark:hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2A10 10 0 002 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33s1.71.11 2.5.33c1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0012 2z"></path></svg>
-                </a>
-                <?php if (file_exists(__DIR__ . '/../Controllers/AuthController.php')): ?>
-                <a href="/login" class="px-6 py-2.5 text-sm font-bold bg-gray-900 dark:bg-white text-white dark:text-black rounded-full hover:bg-gray-800 dark:hover:bg-gray-200 transition-all active:scale-95 shadow-xl shadow-gray-200 dark:shadow-white/5">
-                    Connexion
-                </a>
-                <?php endif; ?>
+            <div>
+                <span class="text-xl font-black tracking-tighter text-slate-900">Gerel Ma<span class="text-brand-500">.</span></span>
+                <p class="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">Business Suite v1</p>
             </div>
         </div>
+
+        <!-- Scrollable Nav -->
+        <nav class="flex-1 px-4 py-2 space-y-1 overflow-y-auto pb-10 custom-scrollbar">
+
+            <p class="sidebar-section-label">Finance & Ops</p>
+            <a href="/dashboard" class="nav-link {{ $_SERVER['REQUEST_URI'] === '/dashboard' ? 'active' : '' }}">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                <span>Cockpit</span>
+            </a>
+            <a href="/documents" class="nav-link {{ str_contains($_SERVER['REQUEST_URI'], '/documents') ? 'active' : '' }}">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Facturation</span>
+            </a>
+            <a href="/caisse" class="nav-link {{ str_contains($_SERVER['REQUEST_URI'], '/caisse') ? 'active' : '' }}">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 21a9.004 9.004 0 008.716-6.747M12 21a9.004 9.004 0 01-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9s2.015-9 4.5-9m0 0a9.015 9.015 0 015.524 1.889m-5.524-1.889a9.015 9.015 0 00-5.524 1.889"/></svg>
+                <span>Journal Caisse</span>
+            </a>
+            <a href="/contrats" class="nav-link {{ str_contains($_SERVER['REQUEST_URI'], '/contrats') ? 'active' : '' }}">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Contrats Scellés</span>
+            </a>
+
+            <p class="sidebar-section-label">Ecosystème</p>
+            <a href="/clients" class="nav-link {{ str_contains($_SERVER['REQUEST_URI'], '/clients') ? 'active' : '' }}">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                <span>Base Clients</span>
+            </a>
+            <a href="/produits" class="nav-link {{ str_contains($_SERVER['REQUEST_URI'], '/produits') ? 'active' : '' }}">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14L4 7m8 4v10M4 7v10l8 4"/></svg>
+                <span>Produits & Services</span>
+            </a>
+
+            <?php if (($_SESSION['user_role'] ?? '') === 'admin'): ?>
+            <p class="sidebar-section-label" style="color:#8b5cf6;">Gouvernance</p>
+            <a href="/equipe" class="nav-link {{ str_contains($_SERVER['REQUEST_URI'], '/equipe') ? 'active' : '' }}">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                <span>Accès Équipe</span>
+            </a>
+            <?php endif; ?>
+
+            <p class="sidebar-section-label">Configuration</p>
+            <a href="/profile" class="nav-link {{ str_contains($_SERVER['REQUEST_URI'], '/profile') ? 'active' : '' }}">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                <span>Mon Profil</span>
+            </a>
+            <?php if (($_SESSION['user_role'] ?? '') === 'admin'): ?>
+            <a href="/entreprises" class="nav-link {{ str_contains($_SERVER['REQUEST_URI'], '/entreprises') ? 'active' : '' }}">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                <span>Identité Entreprise</span>
+            </a>
+            <?php endif; ?>
+        </nav>
+
+        <!-- Footer / Profile -->
+        <div class="p-6 bg-white/40 border-t border-white/50 backdrop-blur-md">
+            <div class="flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-brand-500 text-white flex items-center justify-center font-bold text-sm shadow-lg shadow-brand-500/20">
+                    {{ strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)) }}
+                </div>
+                <div class="flex-1 overflow-hidden">
+                    <p class="text-xs font-black text-slate-900 truncate">{{ $_SESSION['user_name'] ?? 'Utilisateur' }}</p>
+                    <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{{ $_SESSION['user_role'] ?? 'Membre' }}</p>
+                </div>
+                <a href="/logout" data-no-madeline="true" class="p-2 text-slate-400 hover:text-red-500 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                </a>
+            </div>
+        </div>
+    </aside>
+
+    <button class="mobile-trigger" onclick="document.querySelector('.glass-sidebar').classList.toggle('show')">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16m-7 6h7"/></svg>
+    </button>
+
+    <!-- Main Content Panel -->
+    <main id="madeline-app" class="pl-0 lg:pl-[360px] min-h-screen transition-all duration-500">
+        <div class="py-8 px-4 lg:py-12 lg:px-12 w-full">
+            @biir('content')
+        </div>
+
+        <footer class="py-20 px-8 lg:px-12 border-t border-slate-50 mt-20">
+            <div class="text-[10px] font-black uppercase tracking-[0.4em] text-slate-300 mb-8">
+                Gerel Ma Business Suite — Conçu pour les entrepreneurs africains
+            </div>
+            <div class="flex flex-wrap items-center gap-x-12 gap-y-6 text-[9px] font-black uppercase tracking-widest text-slate-400">
+                <span class="flex items-center gap-2">
+                    <div class="w-1 h-1 rounded-full bg-slate-200"></div>
+                    Rapide & Minimal
+                </span>
+                <span class="flex items-center gap-2">
+                    <div class="w-1 h-1 rounded-full bg-slate-200"></div>
+                    Sécurisé
+                </span>
+                <span class="flex items-center gap-2">
+                    <div class="w-1 h-1 rounded-full bg-slate-200"></div>
+                    Made in Dakar
+                </span>
+            </div>
+            <div class="mt-8 text-[8px] font-bold text-slate-300 uppercase tracking-widest">
+                Propulsé par <span class="text-slate-900">Gerel Ma</span> d <span class="text-slate-900">Digital Artists Studio</span>
+            </div>
+        </footer>
+    </main>
+
+@xaaj
+    <!-- =============================== -->
+    <!-- PUBLIC View (Login/Register)    -->
+    <!-- =============================== -->
+    <header class="fixed top-8 left-0 w-full z-50 px-10">
+        <nav class="max-w-5xl mx-auto flex items-center justify-between px-10 py-5 rounded-3xl glass shadow-2xl shadow-black/5">
+            <a href="/" class="text-2xl font-black tracking-tighter flex items-center gap-3">
+                <div class="w-9 h-9 flex items-center justify-center">
+                    <div class="w-3 h-3 bg-brand-600 rounded-full"></div>
+                </div>
+                <span class="text-slate-900">Gerel Ma<span class="text-brand-600">.</span></span>
+            </a>
+            <div class="flex items-center gap-10 text-xs font-black uppercase tracking-widest">
+                <a href="/login" class="text-slate-500 hover:text-brand-600 transition-colors">Accès Client</a>
+                <a href="/register" class="px-8 py-4 rounded-full bg-slate-900 text-white hover:bg-brand-600 transition-all shadow-xl shadow-brand-500/10">Essai Gratuit ↗</a>
+            </div>
+        </nav>
     </header>
 
-    <!-- PIVOT CENTRAL SPA -->
-    <div id="madeline-app">
-        @biir('content')
-    </div>
-
-    <!-- Master Footer -->
-    <footer class="border-t border-gray-100 dark:border-white/[0.05] py-24 bg-gray-50 dark:bg-[#050508] transition-colors">
-        <div class="max-w-[1400px] mx-auto px-6">
-            <div class="grid md:grid-cols-4 gap-16 mb-20">
-                <div class="col-span-2 space-y-8">
-                    <div class="flex items-center gap-4">
-                        <span class="font-serif italic text-2xl text-gray-900 dark:text-white">{{ \Core\Config::get('app.name', 'Madeline') }}</span>
-                    </div>
-                    <p class="text-gray-500 dark:text-white/40 text-sm max-w-sm leading-relaxed font-light">
-                        L'art du code rencontre l'ingénierie de pointe. Madeline est conçu pour transformer vos idées en expériences numériques d'exception.
-                    </p>
-                </div>
-                <div class="space-y-6">
-                    <h4 class="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-400 dark:text-white/20">Explorer</h4>
-                    <ul class="space-y-3 text-sm text-gray-500 dark:text-white/40 font-medium">
-                        <li><a href="/docs" class="hover:text-brand-500 dark:hover:text-white transition-colors">Architecture</a></li>
-                        <li><a href="/docs#orm" class="hover:text-brand-500 dark:hover:text-white transition-colors">Zéro-Migration</a></li>
-                        <li><a href="/api/docs/ui" class="hover:text-brand-500 dark:hover:text-white transition-colors">Console API</a></li>
-                    </ul>
-                </div>
-                <div class="space-y-6">
-                    <h4 class="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-400 dark:text-white/20">Laboratoire</h4>
-                    <ul class="space-y-3 text-sm text-gray-500 dark:text-white/40 font-medium">
-                        <li><a href="https://github.com" class="hover:text-brand-500 dark:hover:text-white transition-colors">Dépôt GitHub</a></li>
-                        <li><a href="#" class="hover:text-brand-500 dark:hover:text-white transition-colors">Documentation</a></li>
-                        <li><a href="#" class="hover:text-brand-500 dark:hover:text-white transition-colors">Défis de Code</a></li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="pt-10 border-t border-gray-200 dark:border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 dark:text-white/20">
-                <p>&copy; {{ date('Y') }} — Un chef-d'œuvre de <span class="text-gray-900 dark:text-white/40 font-serif italic lowercase tracking-normal text-sm">Digital Artist Studio</span> / Dakar</p>
-                <div class="flex gap-10 items-center">
-                    <span class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-green-500"></span> Stable v1.0.0</span>
-                    <span class="hover:text-brand-500 dark:hover:text-white transition-colors cursor-pointer">Licence MIT</span>
-                </div>
-            </div>
+    <main id="madeline-app" class="pt-32 px-10">
+        <div class="max-w-4xl mx-auto py-20">
+            @biir('content')
         </div>
-    </footer>
 
+        <footer class="py-20 max-w-4xl mx-auto border-t border-slate-100 mt-20">
+             <div class="text-[10px] font-black uppercase tracking-[0.4em] text-slate-300 mb-8">
+                Gerel Ma Business Suite — Conçu pour les entrepreneurs africains
+            </div>
+            <div class="flex flex-wrap items-center gap-x-12 gap-y-6 text-[9px] font-black uppercase tracking-widest text-slate-400">
+                <span class="flex items-center gap-2">
+                    <div class="w-1 h-1 rounded-full bg-slate-200"></div>
+                    Rapide & Minimal
+                </span>
+                <span class="flex items-center gap-2">
+                    <div class="w-1 h-1 rounded-full bg-slate-200"></div>
+                    Sécurisé
+                </span>
+                <span class="flex items-center gap-2">
+                    <div class="w-1 h-1 rounded-full bg-slate-200"></div>
+                    Made in Dakar
+                </span>
+            </div>
+        </footer>
+    </main>
+@jeexmiingi
+
+<script src="/js/madeline.js"></script>
+<script>
+    // API Globale Madeline pour les Toasts
+    Madeline.toast = (message, type = 'success') => {
+        const container = document.getElementById('toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type}`;
+        
+        const icon = type === 'success' ? 'M5 13l4 4L19 7' : 'M6 18L18 6M6 6l12 12';
+        toast.innerHTML = `
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="${icon}"/></svg>
+            <span>${message}</span>
+        `;
+        
+        container.appendChild(toast);
+        setTimeout(() => toast.classList.add('show'), 10);
+        setTimeout(() => {
+            toast.classList.add('hide');
+            setTimeout(() => toast.remove(), 400);
+        }, 4000);
+    };
+
+    // Auto-trigger Toast if set in session (handle data-toast attribute if rendered)
+    function checkFlashes() {
+        const flash = document.querySelector('[data-toast]');
+        if (flash) {
+            Madeline.toast(flash.dataset.toast, flash.dataset.toastType || 'success');
+            flash.remove();
+        }
+    }
+    document.addEventListener('madeline:refresh', checkFlashes);
+    checkFlashes();
+
+    // Synchronisation de la navbar avec le routage SPA Madeline.js
+    document.addEventListener('madeline:refresh', function(e) {
+        // Fermer la sidebar sur mobile après navigation
+        document.querySelector('.glass-sidebar').classList.remove('show');
+
+        let currentPath = new URL(e.detail.url || window.location.href).pathname;
+        document.querySelectorAll('.nav-link').forEach(link => {
+            const href = link.getAttribute('href');
+            if (!href) return;
+            
+            // Logique d'activation
+            if (href === '/dashboard' && currentPath === '/dashboard') {
+                link.classList.add('active');
+            } else if (href !== '/dashboard' && currentPath.startsWith(href)) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+    });
+</script>
+@biir('extra_head')
 </body>
 </html>

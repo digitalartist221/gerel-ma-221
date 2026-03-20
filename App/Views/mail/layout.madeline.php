@@ -1,37 +1,39 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <title>@biir('subject')</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f7; color: #51545E; margin: 0; padding: 0; }
-        .wrapper { width: 100%; table-layout: fixed; background-color: #f4f4f7; padding-bottom: 40px; padding-top: 40px; }
-        .main { background-color: #ffffff; border-radius: 24px; width: 100%; max-width: 600px; margin: 0 auto; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.05); }
-        .header { padding: 40px; text-align: center; background: #050508; }
-        .logo { font-size: 24px; font-weight: 800; italic: true; color: #ffffff; letter-spacing: -1px; }
-        .content { padding: 40px; line-height: 1.6; }
-        .footer { padding: 40px; text-align: center; font-size: 12px; color: #6B7280; }
-        .btn { display: inline-block; padding: 12px 32px; background-color: #050508; color: #ffffff !important; text-decoration: none; border-radius: 12px; font-weight: bold; margin-top: 24px; }
-        h1 { color: #111827; font-size: 24px; font-weight: 800; margin-top: 0; }
-        p { margin-top: 0; margin-bottom: 24px; }
-        .accent { color: #8b5cf6; font-weight: bold; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f8fafc; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+        .wrapper { width: 100%; table-layout: fixed; background-color: #f8fafc; padding-bottom: 60px; }
+        .main { background-color: #ffffff; margin: 0 auto; width: 100%; max-width: 600px; border-spacing: 0; border-radius: 40px; overflow: hidden; margin-top: 40px; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); }
+        .header { background-color: #050510; padding: 60px 40px; text-align: center; }
+        .content { padding: 60px 50px; color: #1e293b; line-height: 1.8; font-size: 15px; }
+        .footer { text-align: center; padding: 40px; font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 2px; font-weight: 900; }
+        h1 { font-size: 32px; font-weight: 900; letter-spacing: -1px; margin: 0; color: #ffffff; }
+        .btn { display: inline-block; padding: 18px 36px; background-color: #050510; color: #ffffff !important; text-decoration: none; border-radius: 20px; font-size: 11px; font-weight: 900; text-transform: uppercase; letter-spacing: 2px; margin-top: 30px; }
     </style>
 </head>
 <body>
     <div class="wrapper">
-        <div class="main">
-            <div class="header">
-                <div class="logo">Madeline.</div>
-            </div>
-            <div class="content">
-                @biir('content')
-            </div>
-            <div class="footer">
-                &copy; {{ date('Y') }} {{ \Core\Config::get('app.name', 'Madeline') }}. Tous droits réservés.<br>
-                Propulsé par Madeline Framework
-            </div>
-        </div>
+        <table class="main">
+            <tr>
+                <td class="header">
+                    <h1>Gerel Ma Business</h1>
+                </td>
+            </tr>
+            <tr>
+                <td class="content">
+                    @jeexcontent
+                </td>
+            </tr>
+            <tr>
+                <td class="footer">
+                    &copy; {{ date('Y') }} {{ \Core\Config::get('app.name', 'Madeline') }} Suite Commerciale<br>
+                    Solution de Gestion 360&deg; &middot; S&eacute;n&eacute;gal
+                </td>
+            </tr>
+        </table>
     </div>
 </body>
 </html>

@@ -27,31 +27,50 @@ class SetupController {
         $mail_user = $_POST['mail_user'] ?? '';
         $mail_pass = $_POST['mail_pass'] ?? '';
 
-        $configContent = "<?php\nreturn [\n";
-        $configContent .= "    'app' => [\n";
-        $configContent .= "        'name' => '{$app_name}',\n";
-        $configContent .= "        'description' => '{$app_desc}',\n";
-        $configContent .= "    ],\n";
-        $configContent .= "    'database' => [\n";
-        $configContent .= "        'host' => '{$db_host}',\n";
-        $configContent .= "        'name' => '{$db_name}',\n";
-        $configContent .= "        'user' => '{$db_user}',\n";
-        $configContent .= "        'pass' => '{$db_pass}',\n";
-        $configContent .= "    ],\n";
-        $configContent .= "    'mail' => [\n";
-        $configContent .= "        'from_email' => '{$mail_from}',\n";
-        $configContent .= "        'from_name' => '{$app_name}',\n";
-        $configContent .= "        'host' => '{$mail_host}',\n";
-        $configContent .= "        'port' => '{$mail_port}',\n";
-        $configContent .= "        'user' => '{$mail_user}',\n";
-        $configContent .= "        'pass' => '{$mail_pass}',\n";
-        $configContent .= "    ],\n";
-        $configContent .= "];\n";
+        $configContent = <<<PHP
+<?php
+namespace App\Config;
 
-        $configDir = __DIR__ . '/../config';
+/**
+ * Configuration générée via l'Assistant Rek
+ */
+class AppConfig {
+    public static function get() {
+        return [
+            'name' => '{$app_name}',
+            'description' => '{$app_desc}',
+            'env' => 'local',
+            'debug' => true,
+            'url' => 'http://localhost:8000',
+            'view_cache_lifetime' => 0,
+            'database' => [
+                'host' => '{$db_host}',
+                'name' => '{$db_name}',
+                'user' => '{$db_user}',
+                'pass' => '{$db_pass}',
+                'charset' => 'utf8mb4'
+            ],
+            'mail' => [
+                'from_email' => '{$mail_from}',
+                'from_name' => '{$app_name}',
+                'host' => '{$mail_host}',
+                'port' => '{$mail_port}',
+                'user' => '{$mail_user}',
+                'pass' => '{$mail_pass}',
+            ],
+            'middlewares' => [
+                \App\Middlewares\SecurityHeadersMiddleware::class,
+                \App\Middlewares\CsrfMiddleware::class,
+            ]
+        ];
+    }
+}
+PHP;
+
+        $configDir = __DIR__ . '/../App/Config';
         if (!is_dir($configDir)) mkdir($configDir, 0777, true);
         
-        file_put_contents($configDir . '/app.php', $configContent);
+        file_put_contents($configDir . '/AppConfig.php', $configContent);
         
         header("Location: /");
         exit;
@@ -129,8 +148,8 @@ class SetupController {
             </div>
 
             <div class="pt-8 flex flex-col gap-4 text-center">
-                <button type="submit" class="btn-primary w-full">Finaliser l'Installation</button>
-                <a href="/" class="text-xs text-gray-500 hover:text-white transition-colors">Ignorer et continuer</a>
+                <button type="submit" class="btn-primary w-full shadow-2xl shadow-brand-500/20">Finaliser l'Installation</button>
+                <a href="/?skip_setup=1" class="text-xs text-gray-500 hover:text-white transition-colors">Ignorer et continuer</a>
             </div>
         </form>
     </div>

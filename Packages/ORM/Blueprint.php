@@ -37,8 +37,7 @@ class Blueprint {
                 }
             }
         } catch (\PDOException $e) {
-            // Echec silencieux de la migration (log si disponible)
-            error_log('[Madeline ORM] AutoMigrate failed for table `' . $table . '`: ' . $e->getMessage());
+            throw new \Exception("[Madeline ORM] AutoMigrate failed for table `{$table}`: " . $e->getMessage(), 0, $e);
         }
     }
 
@@ -46,14 +45,16 @@ class Blueprint {
         $sql = "CREATE TABLE `$table` (\n";
         $columns = [];
         
-        // Garanti que 'id' soit toujours créé même si non défini dans la classe (bien que recommandé)
+        // Garanti que 'id' soit toujours créé
         if (!array_key_exists('id', $properties)) {
             $columns[] = "`id` INT AUTO_INCREMENT PRIMARY KEY";
         }
         
         foreach ($properties as $prop => $type) {
-            $sqlType = $this->mapType($type);
-            if ($prop === 'id') {
+            $isPk = ($prop === 'id');
+            $sqlType = $this->mapType($type, $isPk);
+            
+            if ($isPk) {
                 $columns[] = "`$prop` $sqlType AUTO_INCREMENT PRIMARY KEY";
             } else {
                 $columns[] = "`$prop` $sqlType";
@@ -64,14 +65,25 @@ class Blueprint {
         $this->db->exec($sql);
     }
 
-    private function mapType($phpType) {
-        switch ($phpType) {
-            case 'int': return 'INT';
-            case 'float': return 'FLOAT';
-            case 'bool': return 'TINYINT(1)';
-            case 'DateTime': return 'DATETIME';
-            case 'array': return 'JSON';
-            default: return 'VARCHAR(255)';
+    private function mapType($phpType, $isPk = false) {
+        $isNullable = str_starts_with($phpType, '?');
+        $cleanType = ltrim($phpType, '?');
+        
+        $nullSql = $isNullable ? "NULL" : "NOT NULL";
+        
+        switch ($cleanType) {
+            case 'int': 
+                return $isPk ? "INT NOT NULL" : "INT $nullSql DEFAULT 0";
+            case 'float': 
+                return "FLOAT $nullSql DEFAULT 0";
+            case 'bool': 
+                return "TINYINT(1) $nullSql DEFAULT 0";
+            case 'DateTime': 
+                return "DATETIME $nullSql";
+            case 'array': 
+                return "JSON $nullSql";
+            default: 
+                return "VARCHAR(255) $nullSql";
         }
     }
 }

@@ -38,8 +38,8 @@ class Migrator {
             if (!in_array($name, $rana)) {
                 require_once $file;
                 
-                // Parser le nom (ex: 2024_03_10_create_users_table => CreateUsersTable)
-                $classPart = preg_replace('/^\d{4}_\d{2}_\d{2}_/', '', $name);
+                // Parser le nom (ex: 2024_03_10_HHMMSS_create_users_table => CreateUsersTable)
+                $classPart = preg_replace('/^\d{4}_\d{2}_\d{2}_\d{6}_/', '', $name);
                 $className = str_replace(' ', '', ucwords(str_replace('_', ' ', $classPart)));
                 $className = 'App\\Migrations\\' . $className;
                 

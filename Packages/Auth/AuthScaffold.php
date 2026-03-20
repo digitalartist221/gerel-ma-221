@@ -9,9 +9,29 @@ class AuthScaffold {
         self::createMiddleware($basePath);
         self::injectRoutes($basePath);
         
-        echo "✅ Scaffolding Auth (Login, Register, Dashboard, Middleware) installé avec succès !\n";
+        echo "✅ Scaffolding Auth (Login, Register, Dashboard, Profile, Forgot Password) installé avec succès !\n";
         echo "💡 Les routes ont été injectées automatiquement dans routes.php.\n";
         echo "👉 Vous pouvez maintenant exécuter 'php ligeey serve' et visiter /login.\n";
+    }
+
+    /**
+     * Vérifie si l'utilisateur est connecté
+     */
+    public static function check(): bool {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        return !empty($_SESSION['user_id']);
+    }
+
+    /**
+     * Récupère l'ID de l'utilisateur connecté
+     */
+    public static function user() {
+        if (self::check()) {
+            return $_SESSION['user_id'];
+        }
+        return null;
     }
 
     public static function uninstall(string $basePath) {
@@ -25,6 +45,8 @@ class AuthScaffold {
             "/App/Views/auth/login.madeline.php",
             "/App/Views/auth/register.madeline.php",
             "/App/Views/auth/dashboard.madeline.php",
+            "/App/Views/auth/profile.madeline.php",
+            "/App/Views/auth/forgot_password.madeline.php",
         ];
 
         foreach ($files as $file) {
@@ -57,7 +79,7 @@ class AuthScaffold {
         @mkdir("$basePath/App/Controllers", 0777, true);
 
         // --- AUTH CONTROLLER ---
-        $authControllerContent = <<<PHP
+        $authControllerContent = <<<'PHP'
 <?php
 namespace App\Controllers;
 
@@ -74,26 +96,26 @@ class AuthController {
 
     public function login() {
         if (session_status() === PHP_SESSION_NONE) session_start();
-        if (!empty(\$_SESSION['user_id'])) { header('Location: /dashboard'); exit; }
+        if (!empty($_SESSION['user_id'])) { header('Location: /dashboard'); exit; }
         return MadelineView::render('auth/login');
     }
 
     public function loginPOST() {
-        \$email    = trim(\$_POST['email'] ?? '');
-        \$password = \$_POST['password'] ?? '';
+        $email    = trim($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
         
-        if (empty(\$email) || empty(\$password)) {
+        if (empty($email) || empty($password)) {
             return MadelineView::render('auth/login', ['error' => 'Veuillez remplir tous les champs.']);
         }
         
-        \$userModel = new User();
-        \$users = \$userModel->fari(['email' => \$email]);
+        $userModel = new User();
+        $users = $userModel->fari(['email' => $email]);
         
-        if (!empty(\$users) && password_verify(\$password, \$users[0]->password)) {
+        if (!empty($users) && password_verify($password, $users[0]->password)) {
             if (session_status() === PHP_SESSION_NONE) session_start();
             session_regenerate_id(true);
-            \$_SESSION['user_id']   = \$users[0]->id;
-            \$_SESSION['user_name'] = \$users[0]->name;
+            $_SESSION['user_id']   = $users[0]->id;
+            $_SESSION['user_name'] = $users[0]->name;
             header('Location: /dashboard');
             exit;
         }
@@ -105,32 +127,71 @@ class AuthController {
     }
 
     public function registerPOST() {
-        \$user = new User();
-        \$user->name     = trim(\$_POST['name'] ?? '');
-        \$user->email    = trim(\$_POST['email'] ?? '');
-        \$user->password = password_hash(\$_POST['password'] ?? '', PASSWORD_DEFAULT);
-        \$user->bindu();
+        $user = new User();
+        $user->name     = trim($_POST['name'] ?? '');
+        $user->email    = trim($_POST['email'] ?? '');
+        $user->password = password_hash($_POST['password'] ?? '', PASSWORD_DEFAULT);
+        $user->bindu();
         header('Location: /login');
         exit;
     }
 
     public function logout() {
         if (session_status() === PHP_SESSION_NONE) session_start();
-        \$_SESSION = [];
+
+        // Vider le cache des vues
+        $cacheDir = __DIR__ . '/../../storage/cache/views';
+        if (is_dir($cacheDir)) {
+            $files = glob($cacheDir . '/*');
+            foreach ($files as $file) {
+                if (is_file($file)) unlink($file);
+            }
+        }
+
+        $_SESSION = [];
         if (ini_get('session.use_cookies')) {
-            \$p = session_get_cookie_params();
-            setcookie(session_name(), '', time() - 42000, \$p['path'], \$p['domain'], \$p['secure'], \$p['httponly']);
+            $p = session_get_cookie_params();
+            setcookie(session_name(), '', time() - 42000, $p['path'], $p['domain'], $p['secure'], $p['httponly']);
         }
         session_destroy();
         header('Location: /login');
         exit;
+    }
+
+    public function profile() {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $user = User::fari(['id' => $_SESSION['user_id']])[0] ?? null;
+        return MadelineView::render('auth/profile', ['user' => $user]);
+    }
+
+    public function updateProfile() {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $data = [
+            'name' => $_POST['name'] ?? '',
+            'email' => $_POST['email'] ?? ''
+        ];
+        if (!empty($_POST['password'])) {
+            $data['password'] = password_hash($_POST['password'], PASSWORD_DEFAULT);
+        }
+        User::weccit($data, ['id' => $_SESSION['user_id']]);
+        $_SESSION['user_name'] = $data['name'];
+        header('Location: /profile?updated=1');
+        exit;
+    }
+
+    public function forgotPassword() {
+        return MadelineView::render('auth/forgot_password');
+    }
+
+    public function forgotPasswordPOST() {
+        return MadelineView::render('auth/forgot_password', ['success' => 'Si cet email existe, un lien de réinitialisation a été envoyé.']);
     }
 }
 PHP;
         file_put_contents("$basePath/App/Controllers/AuthController.php", $authControllerContent);
 
         // --- DASHBOARD CONTROLLER ---
-        $dashControllerContent = <<<PHP
+        $dashControllerContent = <<<'PHP'
 <?php
 namespace App\Controllers;
 
@@ -146,10 +207,10 @@ class DashboardController {
 
     public function index() {
         if (session_status() === PHP_SESSION_NONE) session_start();
-        \$userName = \$_SESSION['user_name'] ?? 'Utilisateur';
+        $userName = $_SESSION['user_name'] ?? 'Utilisateur';
 
         return MadelineView::render('auth/dashboard', [
-            'name' => \$userName
+            'name' => $userName
         ]);
     }
 }
@@ -160,7 +221,7 @@ PHP;
     private static function createModel($basePath) {
         @mkdir("$basePath/App/Models", 0777, true);
 
-        $modelContent = <<<PHP
+        $modelContent = <<<'PHP'
 <?php
 namespace App\Models;
 
@@ -170,10 +231,10 @@ use Packages\ORM\MadelineORM;
  * Modèle: Utilisateur (Auto-Migré)
  */
 class User extends MadelineORM {
-    public int \$id;
-    public string \$name;
-    public string \$email;
-    public string \$password;
+    public int $id;
+    public string $name;
+    public string $email;
+    public string $password;
 }
 PHP;
         file_put_contents("$basePath/App/Models/User.php", $modelContent);
@@ -182,7 +243,7 @@ PHP;
     private static function createMiddleware($basePath) {
         @mkdir("$basePath/App/Middlewares", 0777, true);
 
-        $mwContent = <<<PHP
+        $mwContent = <<<'PHP'
 <?php
 namespace App\Middlewares;
 
@@ -195,7 +256,7 @@ class AuthMiddleware {
             session_start();
         }
 
-        if (empty(\$_SESSION['user_id'])) {
+        if (empty($_SESSION['user_id'])) {
             // Utilisateur non connecté : on coupe la route et on redirige
             header('Location: /login');
             exit;
@@ -212,60 +273,46 @@ PHP;
     private static function createViews($basePath) {
         @mkdir("$basePath/App/Views/auth", 0777, true);
         
-        // Layout partagé
-        $layoutHtml = <<<HTML
-<!DOCTYPE html>
-<html lang="fr" class="dark">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Madeline Auth</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <style>body { font-family: 'Inter', sans-serif; }</style>
-</head>
-<body class="bg-gray-50 dark:bg-[#050507] text-gray-800 dark:text-gray-200 antialiased min-h-screen">
-    @biir('content')
-</body>
-</html>
-HTML;
-        file_put_contents("$basePath/App/Views/auth/layout.madeline.php", $layoutHtml);
-
         // Login View
-        $loginHtml = <<<HTML
-@indi('auth/layout')
+        $loginHtml = <<<'HTML'
+@indi('layout')
+
+@def('pageTitle')Connexion — Madeline Business@jeexdef
 
 @def('content')
-<div class="min-h-screen flex items-center justify-center relative overflow-hidden">
-    <!-- Background Decor -->
-    <div class="absolute top-[-10%] left-[-10%] w-[50vw] h-[50vw] bg-blue-600/10 rounded-full filter blur-[100px] pointer-events-none"></div>
-    <div class="absolute bottom-[-20%] right-[-10%] w-[40vw] h-[40vw] bg-purple-600/10 rounded-full filter blur-[100px] pointer-events-none"></div>
-
-    <div class="max-w-md w-full relative z-10 bg-white dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-gray-100 dark:border-white/10">
+<div class="min-h-[70vh] flex items-center justify-center">
+    <div class="max-w-md w-full floating-card p-12 rounded-6xl border-gray-100">
         <div class="text-center mb-10">
-            <h2 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-500 to-purple-600 mb-2">Bienvenue</h2>
-            <p class="text-gray-500 dark:text-gray-400 text-sm">Connectez-vous à votre espace personnel</p>
+            <h2 class="text-4xl font-extrabold text-[#050510] tracking-tight mb-4">Bon retour.</h2>
+            <p class="text-gray-400 text-sm font-medium">Accédez à votre cockpit de gestion.</p>
         </div>
         
-        @ndax(isset(\$error))
-            <div class="bg-red-500/10 text-red-500 text-sm p-4 rounded-xl mb-6 border border-red-500/20 text-center font-medium">
-                {{ \$error }}
+        @ndax(isset($error))
+            <div class="bg-red-50 text-red-500 text-[11px] font-bold uppercase tracking-widest p-4 rounded-2xl mb-8 border border-red-100 text-center">
+                {{ $error }}
             </div>
         @jeexndax
         
-        <form method="POST" action="/login" class="space-y-5">
+        <form method="POST" action="/login" class="space-y-6">
             @csrf
             <div>
-                <label class="block text-sm font-medium mb-1.5 dark:text-gray-300">Adresse Email</label>
-                <input type="email" name="email" required class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all">
+                <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 ml-4">Email Address</label>
+                <input type="email" name="email" required placeholder="name@company.com" class="w-full px-6 py-4 rounded-full bg-gray-50 border border-gray-100 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all text-sm font-medium">
             </div>
             <div>
-                <label class="block text-sm font-medium mb-1.5 dark:text-gray-300">Mot de passe</label>
-                <input type="password" name="password" required class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-blue-500 focus:outline-none transition-all">
+                <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 ml-4">Password</label>
+                <input type="password" name="password" required placeholder="••••••••" class="w-full px-6 py-4 rounded-full bg-gray-50 border border-gray-100 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all text-sm font-medium">
             </div>
-            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl py-3.5 mt-8 transition-all hover:shadow-lg hover:shadow-blue-500/30">Se Connecter</button>
+            <button type="submit" class="w-full btn-dark rounded-full py-5 text-[11px] font-bold uppercase tracking-widest shadow-2xl shadow-black/10 mt-4">
+                Se Connecter ↗
+            </button>
         </form>
-        <p class="mt-8 text-center text-sm dark:text-gray-400">Pas encore de compte ? <a href="/register" class="text-blue-500 hover:text-blue-400 font-semibold transition-colors">S'inscrire</a></p>
+        
+        <div class="mt-10 text-center">
+            <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                Nouveau ici ? <a href="/register" class="text-brand-500 hover:underline">Créer un compte —</a>
+            </p>
+        </div>
     </div>
 </div>
 @jeexdef
@@ -273,37 +320,43 @@ HTML;
         file_put_contents("$basePath/App/Views/auth/login.madeline.php", $loginHtml);
 
         // Register View
-        $registerHtml = <<<HTML
-@indi('auth/layout')
+        $registerHtml = <<<'HTML'
+@indi('layout')
+
+@def('pageTitle')Inscription — Madeline Business@jeexdef
 
 @def('content')
-<div class="min-h-screen flex items-center justify-center relative overflow-hidden">
-    <!-- Background Decor -->
-    <div class="absolute top-[-10%] right-[-10%] w-[50vw] h-[50vw] bg-green-600/10 rounded-full filter blur-[100px] pointer-events-none"></div>
-
-    <div class="max-w-md w-full relative z-10 bg-white dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-gray-100 dark:border-white/10">
+<div class="min-h-[70vh] flex items-center justify-center">
+    <div class="max-w-md w-full floating-card p-12 rounded-6xl border-gray-100">
         <div class="text-center mb-10">
-            <h2 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-green-400 to-emerald-600 mb-2">Rejoignez-nous</h2>
-            <p class="text-gray-500 dark:text-gray-400 text-sm">Créez votre compte en quelques secondes</p>
+            <h2 class="text-4xl font-extrabold text-[#050510] tracking-tight mb-4">Commencer.</h2>
+            <p class="text-gray-400 text-sm font-medium">Créez votre compte Business en un instant.</p>
         </div>
         
-        <form method="POST" action="/register" class="space-y-4">
+        <form method="POST" action="/register" class="space-y-6">
             @csrf
             <div>
-                <label class="block text-sm font-medium mb-1.5 dark:text-gray-300">Nom Complet</label>
-                <input type="text" name="name" required class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-green-500 focus:outline-none transition-all">
+                <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 ml-4">Nom Complet</label>
+                <input type="text" name="name" required placeholder="John Doe" class="w-full px-6 py-4 rounded-full bg-gray-50 border border-gray-100 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all text-sm font-medium">
             </div>
             <div>
-                <label class="block text-sm font-medium mb-1.5 dark:text-gray-300">Adresse Email</label>
-                <input type="email" name="email" required class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-green-500 focus:outline-none transition-all">
+                <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 ml-4">Email Address</label>
+                <input type="email" name="email" required placeholder="name@company.com" class="w-full px-6 py-4 rounded-full bg-gray-50 border border-gray-100 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all text-sm font-medium">
             </div>
             <div>
-                <label class="block text-sm font-medium mb-1.5 dark:text-gray-300">Mot de passe</label>
-                <input type="password" name="password" required class="w-full px-4 py-3 rounded-xl bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-white/10 focus:ring-2 focus:ring-green-500 focus:outline-none transition-all">
+                <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 ml-4">Password</label>
+                <input type="password" name="password" required placeholder="••••••••" class="w-full px-6 py-4 rounded-full bg-gray-50 border border-gray-100 focus:bg-white focus:ring-2 focus:ring-brand-500 focus:outline-none transition-all text-sm font-medium">
             </div>
-            <button type="submit" class="w-full bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl py-3.5 mt-8 transition-all hover:shadow-lg hover:shadow-green-500/30">Créer mon compte</button>
+            <button type="submit" class="w-full btn-dark rounded-full py-5 text-[11px] font-bold uppercase tracking-widest shadow-2xl shadow-black/10 mt-4">
+                S'inscrire ↗
+            </button>
         </form>
-        <p class="mt-8 text-center text-sm dark:text-gray-400">Déjà inscrit ? <a href="/login" class="text-green-500 hover:text-green-400 font-semibold transition-colors">Se connecter</a></p>
+        
+        <div class="mt-10 text-center">
+            <p class="text-[11px] font-bold text-gray-400 uppercase tracking-widest">
+                Déjà inscrit ? <a href="/login" class="text-brand-500 hover:underline">Se connecter —</a>
+            </p>
+        </div>
     </div>
 </div>
 @jeexdef
@@ -311,53 +364,128 @@ HTML;
         file_put_contents("$basePath/App/Views/auth/register.madeline.php", $registerHtml);
 
         // Dashboard View
-        $dashboardHtml = <<<HTML
-@indi('auth/layout')
+        $dashboardHtml = <<<'HTML'
+@indi('layout')
 
 @def('content')
-<div class="min-h-screen bg-gray-50 dark:bg-[#050507]">
-    <!-- Navbar -->
-    <nav class="bg-white dark:bg-gray-800/50 backdrop-blur-lg border-b border-gray-200 dark:border-white/10 p-4">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <div class="flex items-center space-x-3">
-                <div class="w-8 h-8 rounded bg-blue-600 text-white flex items-center justify-center font-bold">M</div>
-                <span class="font-semibold text-lg tracking-tight">Madeline APPS</span>
-            </div>
-            <a href="/logout" class="px-4 py-2 rounded-full border border-red-500/50 text-red-500 hover:bg-red-500 hover:text-white transition-colors text-sm font-medium">Déconnexion</a>
-        </div>
-    </nav>
+<div class="py-12">
+    <header class="mb-12">
+        <h1 class="text-5xl font-black text-[#050510] tracking-tight mb-4">Bonjour, {{ $name }} ! 👋</h1>
+        <p class="text-gray-400 font-bold uppercase tracking-widest text-[11px]">Bienvenue sur votre cockpit de gestion sécurisé.</p>
+    </header>
 
-    <!-- Main Content -->
-    <main class="max-w-7xl mx-auto p-8 mt-10">
-        <header class="mb-10">
-            <h1 class="text-4xl font-bold mb-2">Bonjour, {{ \$name }} ! 👋</h1>
-            <p class="text-gray-500 dark:text-gray-400 text-lg">Bienvenue sur votre espace sécurisé.</p>
-        </header>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Card 1 -->
-            <div class="bg-white dark:bg-gray-800/40 rounded-3xl p-6 border border-gray-100 dark:border-white/5 shadow-sm">
-                <div class="w-12 h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-4">
-                    <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                </div>
-                <h3 class="text-lg font-semibold mb-2">Performances</h3>
-                <p class="text-gray-500 dark:text-gray-400 text-sm">Le middleware d'authentification a bloqué l'accès au portail en millisecondes.</p>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div class="floating-card p-10 rounded-[3rem] bg-white border-gray-100">
+            <div class="w-12 h-12 rounded-2xl bg-brand-50 text-brand-500 flex items-center justify-center mb-6">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
             </div>
-            
-            <!-- Card 2 -->
-            <div class="bg-white dark:bg-gray-800/40 rounded-3xl p-6 border border-gray-100 dark:border-white/5 shadow-sm">
-                <div class="w-12 h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center mb-4">
-                    <svg class="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
-                </div>
-                <h3 class="text-lg font-semibold mb-2">Sécurité Active</h3>
-                <p class="text-gray-500 dark:text-gray-400 text-sm">Votre mot de passe est encrypté (Bcrypt) et l'accès est entièrement contrôlé.</p>
-            </div>
+            <h3 class="text-lg font-bold mb-2">Performances</h3>
+            <p class="text-gray-400 text-sm font-medium">Accès sécurisé contrôlé par le middleware Madeline.</p>
         </div>
-    </main>
+        
+        <div class="floating-card p-10 rounded-[3rem] bg-white border-gray-100">
+            <div class="w-12 h-12 rounded-2xl bg-green-50 text-green-500 flex items-center justify-center mb-6">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+            </div>
+            <h3 class="text-lg font-bold mb-2">Sécurité Active</h3>
+            <p class="text-gray-400 text-sm font-medium">Chiffrement Bcrypt et gestion de session native.</p>
+        </div>
+    </div>
 </div>
 @jeexdef
 HTML;
         file_put_contents("$basePath/App/Views/auth/dashboard.madeline.php", $dashboardHtml);
+
+        // Profile View
+        $profileHtml = <<<'HTML'
+@indi('layout')
+
+@def('content')
+<div class="max-w-4xl mx-auto py-12">
+    <div class="mb-12">
+        <h1 class="text-4xl font-black text-[#050510] tracking-tight mb-4">Votre Profil</h1>
+        <p class="text-gray-400 font-bold uppercase tracking-widest text-[10px]">Gérez vos informations personnelles et votre sécurité.</p>
+    </div>
+
+    @ndax(isset($_GET['updated']))
+        <div class="mb-8 p-6 bg-green-50 border border-green-100 rounded-3xl text-green-600 text-[10px] font-black uppercase tracking-widest">
+            Profil mis à jour avec succès ! ✨
+        </div>
+    @jeexndax
+
+    <div class="floating-card p-12 rounded-[3rem] bg-white border-gray-100 shadow-[0_40px_100px_rgba(0,0,0,0.03)]">
+        <form action="/profile/update" method="POST" class="space-y-10">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+                <div class="space-y-3">
+                    <label class="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-2">Nom Complet</label>
+                    <input type="text" name="name" value="{{ $user->name }}" required class="w-full bg-gray-50/50 border border-gray-100 rounded-2xl px-8 py-5 text-sm font-bold focus:ring-2 focus:ring-brand-500 transition-all">
+                </div>
+                <div class="space-y-3">
+                    <label class="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-2">Email Professionnel</label>
+                    <input type="email" name="email" value="{{ $user->email }}" required class="w-full bg-gray-50/50 border border-gray-100 rounded-2xl px-8 py-5 text-sm font-bold focus:ring-2 focus:ring-brand-500 transition-all">
+                </div>
+            </div>
+
+            <div class="pt-10 border-t border-gray-50">
+                <div class="space-y-3 max-w-md">
+                    <label class="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-2">Nouveau Mot de Passe</label>
+                    <input type="password" name="password" placeholder="Laisser vide pour ne pas changer" class="w-full bg-gray-50/50 border border-gray-100 rounded-2xl px-8 py-5 text-sm font-bold focus:ring-2 focus:ring-brand-500 transition-all">
+                </div>
+            </div>
+
+            <div class="pt-8 flex justify-end">
+                <button type="submit" class="px-12 py-5 rounded-full btn-dark text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-black/10">
+                    Sauvegarder les modifications ↗
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+@jeexdef
+HTML;
+        file_put_contents("$basePath/App/Views/auth/profile.madeline.php", $profileHtml);
+
+        // Forgot Password View
+        $forgotHtml = <<<'HTML'
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mot de passe oublié — Madeline</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+</head>
+<body class="min-h-screen flex items-center justify-center p-6 bg-white">
+    <div class="w-full max-w-md space-y-12">
+        <div class="text-center">
+            <h1 class="text-4xl font-black tracking-tight mb-4">Récupération.</h1>
+            <p class="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Entrez votre email pour continuer</p>
+        </div>
+
+        @ndax(isset($success))
+            <div class="p-8 rounded-3xl bg-green-50 border border-green-100 text-green-600 text-center space-y-4">
+                <p class="text-[10px] font-black uppercase tracking-widest">{{ $success }}</p>
+                <a href="/login" class="block text-[10px] font-black uppercase tracking-widest underline">Retour à la connexion</a>
+            </div>
+        @jeexndax
+
+        @ndax(!isset($success))
+            <form action="/forgot-password" method="POST" class="space-y-6">
+                <div class="space-y-3">
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 ml-2">Email</label>
+                    <input type="email" name="email" required placeholder="nom@entreprise.com" class="w-full bg-gray-50/50 border border-gray-100 rounded-3xl px-8 py-6 text-sm font-bold focus:ring-2 focus:ring-brand-500 transition-all">
+                </div>
+                <button type="submit" class="w-full bg-[#050510] text-white rounded-3xl py-6 text-[10px] font-black uppercase tracking-[0.3em] shadow-2xl shadow-black/10 hover:scale-[1.02] transition-all">
+                    Envoyer le lien ↗
+                </button>
+            </form>
+        @jeexndax
+    </div>
+</body>
+</html>
+HTML;
+        file_put_contents("$basePath/App/Views/auth/forgot_password.madeline.php", $forgotHtml);
     }
 
     private static function injectRoutes($basePath) {
@@ -367,7 +495,7 @@ HTML;
             
             // Si les routes n'ont pas déjà été injectées
             if (strpos($routesCode, '/logout') === false) {
-                $injection = <<<PHP
+                $injection = <<<'PHP'
 
 // ==== ROUTES: SCATTERED AUTH SCAFFOLD ==== //
 Router::get('/login', ['\App\Controllers\AuthController', 'login']);
@@ -375,6 +503,12 @@ Router::post('/login', ['\App\Controllers\AuthController', 'loginPOST']);
 Router::get('/register', ['\App\Controllers\AuthController', 'register']);
 Router::post('/register', ['\App\Controllers\AuthController', 'registerPOST']);
 Router::get('/logout', ['\App\Controllers\AuthController', 'logout']);
+
+// Profil & Sécurité
+Router::get('/profile', ['\App\Controllers\AuthController', 'profile'], ['\App\Middlewares\AuthMiddleware']);
+Router::post('/profile/update', ['\App\Controllers\AuthController', 'updateProfile'], ['\App\Middlewares\AuthMiddleware']);
+Router::get('/forgot-password', ['\App\Controllers\AuthController', 'forgotPassword']);
+Router::post('/forgot-password', ['\App\Controllers\AuthController', 'forgotPasswordPOST']);
 
 // Route Sécurisée par l'AuthMiddleware
 Router::get('/dashboard', ['\App\Controllers\DashboardController', 'index'], ['\App\Middlewares\AuthMiddleware']);

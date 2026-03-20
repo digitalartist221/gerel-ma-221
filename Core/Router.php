@@ -56,11 +56,15 @@ class Router {
                     
                     $allMiddlewares = array_merge($globalMiddlewares, $routeMiddlewares);
                     
-                    foreach ($allMiddlewares as $mwClass) {
+                    foreach ($allMiddlewares as $mwEntry) {
+                        $mwParts = explode(':', $mwEntry);
+                        $mwClass = $mwParts[0];
+                        $mwArg = $mwParts[1] ?? null;
+
                         if (class_exists($mwClass)) {
                             $middleware = new $mwClass();
-                            if (!$middleware->handle()) {
-                                // Mettre fin si le middleware renvoie false (la réponse a sûrement déjà été gérée/redirigée)
+                            // Appel de handle avec l'argument optionnel (ex: le rôle)
+                            if (!$middleware->handle($mwArg)) {
                                 return;
                             }
                         }

@@ -69,7 +69,14 @@ abstract class MadelineORM {
         $class = new \ReflectionClass($this);
         $props = $class->getProperties(\ReflectionProperty::IS_PUBLIC); // Seules les props public
         foreach ($props as $prop) {
-            $type = $prop->getType() ? $prop->getType()->getName() : 'string';
+            $type = 'string';
+            $reflectionType = $prop->getType();
+            if ($reflectionType instanceof \ReflectionNamedType) {
+                $type = $reflectionType->getName();
+                if ($reflectionType->allowsNull()) {
+                    $type = '?' . $type;
+                }
+            }
             $this->properties[$prop->getName()] = $type;
         }
     }
@@ -82,13 +89,32 @@ abstract class MadelineORM {
         return $name;
     }
 
-    // --- SYNTAXE WOLOF DÉDIÉE --- //
+    // --- ACCÈS MAGIQUE (STATIQUE & INSTANCE) --- //
+
+    public function __call($method, $args) {
+        $internal = "_" . $method;
+        if (method_exists($this, $internal)) {
+            return $this->$internal(...$args);
+        }
+        throw new \Exception("Méthode [{$method}] non trouvée dans le modèle " . get_called_class());
+    }
+
+    public static function __callStatic($method, $args) {
+        $instance = new static();
+        $internal = "_" . $method;
+        if (method_exists($instance, $internal)) {
+            return $instance->$internal(...$args);
+        }
+        throw new \Exception("Méthode Statique [{$method}] non trouvée dans le modèle " . get_called_class());
+    }
+
+    // --- SYNTAXE WOLOF DÉDIÉE (LOGIQUE INTERNE) --- //
 
     /**
-     * Fari : Récupérer/Chercher. (SELECT)
+     * _fari : Récupérer/Chercher. (SELECT)
      * @param array $conditions (ex: ['id' => 1])
      */
-    public function fari($conditions = []) {
+    protected function _fari($conditions = []) {
         $safeTable = $this->sanitizeName($this->table);
         $sql = "SELECT `{$safeTable}`.*";
         
@@ -139,28 +165,32 @@ abstract class MadelineORM {
     }
 
     /**
-     * Loko : Associer / Joindre. (JOIN)
-     * @param string $table Table cible
-     * @param string $on Clause ON (ex: 'users.id = posts.user_id')
+     * _loko : Associer / Joindre. (JOIN)
      */
-    public function loko($table, $on) {
+    protected function _loko($table, $on) {
         $this->joins[] = ['table' => $table, 'on' => $on];
         return $this;
     }
 
     /**
-     * Bindu: Insérer / Enregistrer. (INSERT)
+     * _bindu: Insérer / Enregistrer. (INSERT)
      */
-    public function bindu() {
-        $data = [];
+    protected function _bindu($data = null) {
+        $safeTable = $this->sanitizeName($this->table);
+        
+        // Si des données sont passées en argument (appel statique ou direct)
+        if (is_array($data)) {
+            foreach ($data as $k => $v) { $this->$k = $v; }
+        }
+
+        $payload = [];
         $colsArray = [];
         $valsArray = [];
-        $safeTable = $this->sanitizeName($this->table);
 
         foreach ($this->properties as $prop => $type) {
             if ($prop !== 'id' && isset($this->$prop)) {
                 $safeProp = $this->sanitizeName($prop);
-                $data[$safeProp] = $this->$prop;
+                $payload[$safeProp] = $this->$prop;
                 $colsArray[] = "`$safeProp`";
                 $valsArray[] = ":$safeProp";
             }
@@ -171,45 +201,79 @@ abstract class MadelineORM {
         
         $sql = "INSERT INTO `{$safeTable}` ($cols) VALUES ($vals)";
         $stmt = self::$db->prepare($sql);
-        $stmt->execute($data);
+        $stmt->execute($payload);
         
         $this->id = self::$db->lastInsertId();
         return $this;
     }
 
     /**
-     * Weccit: Changer / Mettre à jour. (UPDATE)
+     * _weccit: Changer / Mettre à jour. (UPDATE)
+     * Supporte $data + $conditions pour appel statique rapide
      */
-    public function weccit() {
-        if (!isset($this->id)) throw new \Exception("Cannot update without ID");
-
+    protected function _weccit($data = null, $conditions = null) {
         $safeTable = $this->sanitizeName($this->table);
-        $data = [];
+        
+        // --- CAS 1: Appel statique avec data et conditions ---
+        if (is_array($data) && is_array($conditions)) {
+            $set = [];
+            $params = [];
+            foreach ($data as $key => $val) {
+                $safeKey = $this->sanitizeName($key);
+                $set[] = "`$safeKey` = :set_$safeKey";
+                $params["set_$safeKey"] = $val;
+            }
+            $where = [];
+            foreach ($conditions as $key => $val) {
+                $safeKey = $this->sanitizeName($key);
+                $where[] = "`$safeKey` = :where_$safeKey";
+                $params["where_$safeKey"] = $val;
+            }
+            $sql = "UPDATE `{$safeTable}` SET " . implode(', ', $set) . " WHERE " . implode(' AND ', $where);
+            $stmt = self::$db->prepare($sql);
+            return $stmt->execute($params);
+        }
+
+        // --- CAS 2: Appel d'instance via ID ---
+        if (!isset($this->id)) throw new \Exception("Cannot update without ID or conditions");
+
+        $payload = [];
         $set = [];
         foreach ($this->properties as $prop => $type) {
             if ($prop !== 'id' && isset($this->$prop)) {
                 $safeProp = $this->sanitizeName($prop);
-                $data[$safeProp] = $this->$prop;
+                $payload[$safeProp] = $this->$prop;
                 $set[] = "`$safeProp` = :set_$safeProp";
             }
         }
 
         $sql = "UPDATE `{$safeTable}` SET " . implode(', ', $set) . " WHERE `id` = :id";
         
-        // Remapping keys for bound parameters
         $boundData = ['id' => $this->id];
-        foreach($data as $k => $v) { $boundData["set_$k"] = $v; }
+        foreach($payload as $k => $v) { $boundData["set_$k"] = $v; }
 
         $stmt = self::$db->prepare($sql);
         return $stmt->execute($boundData);
     }
 
     /**
-     * Far: Supprimer / Effacer. (DELETE)
+     * _far: Supprimer / Effacer. (DELETE)
      */
-    public function far() {
-        if (!isset($this->id)) throw new \Exception("Cannot delete without ID");
+    protected function _far($conditions = null) {
         $safeTable = $this->sanitizeName($this->table);
+        
+        if (is_array($conditions)) {
+            $where = [];
+            foreach ($conditions as $key => $val) {
+                $safeKey = $this->sanitizeName($key);
+                $where[] = "`$safeKey` = :$safeKey";
+            }
+            $sql = "DELETE FROM `{$safeTable}` WHERE " . implode(' AND ', $where);
+            $stmt = self::$db->prepare($sql);
+            return $stmt->execute($conditions);
+        }
+
+        if (!isset($this->id)) throw new \Exception("Cannot delete without ID or conditions");
         $sql = "DELETE FROM `{$safeTable}` WHERE `id` = :id";
         $stmt = self::$db->prepare($sql);
         return $stmt->execute(['id' => $this->id]);

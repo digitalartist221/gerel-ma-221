@@ -5,26 +5,19 @@ abstract class Config {
     private static $items = [];
 
     public static function load() {
-        // 1. Priorité Principale : La nouvelle classe AppConfig orientée objet
+        // 1. Priorité Absolue : AppConfig (Orienté Objet)
         if (class_exists('\\App\\Config\\AppConfig')) {
             self::$items = \App\Config\AppConfig::get();
         } 
-        // 2. Rétrocompatibilité 1 : Ancien fichier array dans config/
-        else {
-            $configFile = __DIR__ . '/../config/app.php';
-            if (file_exists($configFile)) {
-                self::$items = require $configFile;
-            }
-        }
         
-        // Compatibilité avec l'ancien config.php à la racine (généré par l'ancien setup)
+        // 2. Compatibilité Locale / Legacy : config.php à la racine
         $legacyConfig = __DIR__ . '/../config.php';
         if (file_exists($legacyConfig)) {
             $legacyDB = require $legacyConfig;
-            self::$items['database']['host'] = $legacyDB['db_host'] ?? self::$items['database']['host'];
-            self::$items['database']['name'] = $legacyDB['db_name'] ?? self::$items['database']['name'];
-            self::$items['database']['user'] = $legacyDB['db_user'] ?? self::$items['database']['user'];
-            self::$items['database']['pass'] = $legacyDB['db_pass'] ?? self::$items['database']['pass'];
+            self::$items['database']['host'] = $legacyDB['db_host'] ?? (self::$items['database']['host'] ?? 'localhost');
+            self::$items['database']['name'] = $legacyDB['db_name'] ?? (self::$items['database']['name'] ?? '');
+            self::$items['database']['user'] = $legacyDB['db_user'] ?? (self::$items['database']['user'] ?? 'root');
+            self::$items['database']['pass'] = $legacyDB['db_pass'] ?? (self::$items['database']['pass'] ?? '');
         }
     }
 

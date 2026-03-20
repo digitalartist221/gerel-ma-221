@@ -6,6 +6,13 @@ use Packages\View\MadelineView;
 
 class Mail {
     /**
+     * Alias intuitif pour send()
+     */
+    public static function to($to, $subject, $body, $data = []) {
+        return self::send($to, $subject, 'mail/default', ['body' => $body]);
+    }
+
+    /**
      * Envoie un e-mail en utilisant un template MadelineView
      *
      * @param string $to Destinataire
@@ -17,8 +24,8 @@ class Mail {
     public static function send($to, $subject, $view, $data = []) {
         $config = Config::get('mail');
         
-        // Rendu du contenu via le moteur de vues
-        $htmlContent = MadelineView::render($view, $data);
+        // Rendu du contenu via le moteur de vues (En mode RAW pour éviter l'interruption SPA)
+        $htmlContent = MadelineView::render($view, $data, true);
         
         $fromEmail = $config['from_email'] ?? 'noreply@madeline.local';
         $fromName = $config['from_name'] ?? Config::get('app.name', 'Madeline');
@@ -38,7 +45,7 @@ class Mail {
             return true;
         }
 
-        // Si SMTP est configuré (Simple wrapper pour l'instant, peut évoluer vers PHPMailer/Swift)
+        // Si SMTP est configuré
         if (!empty($config['host'])) {
             return self::sendSmtp($to, $subject, $htmlContent, $headers, $config);
         }
@@ -47,14 +54,7 @@ class Mail {
         return mail($to, $subject, $htmlContent, implode("\r\n", $headers));
     }
 
-    /**
-     * Placeholder pour une future implémentation SMTP plus robuste
-     * Pour l'instant on utilise mail() mais on est prêt pour l'injection
-     */
     private static function sendSmtp($to, $subject, $content, $headers, $config) {
-        // Dans une version industrielle, on injecterait ici PHPMailer ou un client SMTP socket
-        // Pour Madeline, on garde la simplicité mail() si le serveur est configuré
-        // ou on invite l'utilisateur à installer un driver via Composer.
         return mail($to, $subject, $content, implode("\r\n", $headers));
     }
 }

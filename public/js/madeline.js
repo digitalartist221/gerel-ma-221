@@ -168,6 +168,14 @@ const Madeline = (() => {
             if (pushState) window.history.pushState(null, '', url);
             loader.style.width = '60%';
 
+            // [Nouveau] Synchronisation des classes et attributs du conteneur (Garde les marges)
+            if (fragment) {
+                container.className = fragment.className;
+                Array.from(fragment.attributes).forEach(attr => {
+                    if (attr.name !== 'id') container.setAttribute(attr.name, attr.value);
+                });
+            }
+
             // Injection des styles dynamiques (pour les layouts imbriqués)
             if (data.head) {
                 const headDoc = new DOMParser().parseFromString(data.head, 'text/html');

@@ -2,7 +2,7 @@
 namespace App\Config;
 
 /**
- * Configuration Principale de l'Application Madeline
+ * Configuration Principale de l'Application Gerel Ma
  *
  * Toutes les variables d'environnement, accès base de données,
  * et réglages globaux se trouvent ici.
@@ -16,7 +16,7 @@ class AppConfig {
             | Nom de l'application
             |--------------------------------------------------------------------------
             */
-            'name' => 'Madeline App',
+            'name' => 'Gerel Ma',
 
             /*
             |--------------------------------------------------------------------------

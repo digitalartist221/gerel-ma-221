@@ -85,15 +85,33 @@ switch ($command) {
         echo "✓ Auths supprimés proprement.\n";
         break;
 
+    case 'amal:user':
+        if ($argc < 5) die("❌ Erreur: Utilisation: php ligeey amal:user [nom] [email] [password]\n");
+        $name = $argv[2];
+        $email = $argv[3];
+        $pass = password_hash($argv[4], PASSWORD_DEFAULT);
+        require_once __DIR__ . '/App/Models/User.php';
+        $user = new \App\Models\User();
+        $user->name = $name;
+        $user->email = $email;
+        $user->password = $pass;
+        $user->bindu();
+        echo "✓ Utilisateur '$name' ($email) créé avec succès.\n";
+        break;
+
+    case 'auth:check':
+        $hasController = file_exists(__DIR__ . '/App/Controllers/AuthController.php');
+        $hasModel = file_exists(__DIR__ . '/App/Models/User.php');
+        echo "🔍 Vérification de l'Auth Madeline :\n";
+        echo ($hasController ? "✅ Controller présent\n" : "❌ Controller absent\n");
+        echo ($hasModel ? "✅ Modèle User présent\n" : "❌ Modèle User absent\n");
+        break;
+
     case 'setal:cache':
     case 'cache:clear':
         echo "⏳ Setal bi caches yi...\n";
-        $cacheDir = __DIR__ . '/storage/cache/views';
-        if (is_dir($cacheDir)) {
-            $files = glob($cacheDir . '/*.php');
-            foreach ($files as $file) { if (is_file($file)) unlink($file); }
-            echo "✓ Cache des vues setal na.\n";
-        }
+        \Core\Cache::clear();
+        echo "✓ Cache des vues setal na.\n";
         break;
 
     case 'tahl:js':
@@ -107,13 +125,1471 @@ switch ($command) {
         linkStorage();
         break;
 
+    case 'setal:reset':
+    case 'reset:factory':
+        echo "🚨 ATTENTION : Cette action va réinitialiser Madeline à zéro (fichiers originaux uniquement).\n";
+        echo "🤔 Êtes-vous sûr ? (oui/non) : ";
+        $handle = fopen("php://stdin", "r");
+        $line = fgets($handle);
+        if (trim($line) != 'oui') {
+            echo "❌ Annulé.\n";
+            exit;
+        }
+        echo "⏳ Réinitialisation en cours...\n";
+        
+        // 1. Nettoyage des dossiers
+        $dirsToClean = [
+            __DIR__ . '/App/Controllers',
+            __DIR__ . '/App/Models',
+            __DIR__ . '/App/Views',
+            __DIR__ . '/App/Migrations',
+            __DIR__ . '/storage/cache/views',
+            __DIR__ . '/storage/app/public',
+            __DIR__ . '/public/extensions'
+        ];
+
+        $keepFiles = [
+            'AuthController.php', 'DashboardController.php', 'DevController.php',
+            'DocsController.php', 'PaytechController.php',
+            'User.php', 
+            'auth', 'docs', 'mail', 'errors', 'Components',
+            'layout.madeline.php', 'dashboard.madeline.php', 'welcome.madeline.php',
+            'api.madeline.php', 'guide.madeline.php', 'AppConfig.php',
+            'madeline.code-snippets', '.htaccess', 'favicon.png', 'check.php' // Protecting snippets, hosting configs and diagnostics
+        ];
+
+        foreach ($dirsToClean as $dir) {
+            if (!is_dir($dir)) continue;
+            $items = scandir($dir);
+            foreach ($items as $item) {
+                if ($item == '.' || $item == '..') continue;
+                if (in_array($item, $keepFiles)) continue;
+                
+                $path = $dir . '/' . $item;
+                if (is_dir($path)) {
+                    // Simple recursive rmdir (minimal)
+                    exec(PHP_OS_FAMILY === 'Windows' ? "rd /s /q \"$path\"" : "rm -rf \"$path\"");
+                } else {
+                    unlink($path);
+                }
+            }
+        }
+
+        // 2. Nettoyage de la base de données (si configurée)
+        try {
+            \Core\Config::load();
+            $dbConfig = \Core\Config::get('database');
+            if (!empty($dbConfig['name'])) {
+                $dsn = "mysql:host={$dbConfig['host']};dbname={$dbConfig['name']};charset={$dbConfig['charset']}";
+                $db = new \PDO($dsn, $dbConfig['user'], $dbConfig['pass']);
+                $db->exec("SET FOREIGN_KEY_CHECKS = 0;");
+                $tables = $db->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
+                foreach ($tables as $table) {
+                    $db->exec("DROP TABLE `$table` ");
+                }
+                $db->exec("SET FOREIGN_KEY_CHECKS = 1;");
+                echo "✓ Base de données nettoyée.\n";
+            }
+        } catch (\Exception $e) { echo "⚠️ DB non nettoyée : " . $e->getMessage() . "\n"; }
+
+        // 3. Restauration des Templates "Indestructibles"
+        $docsDir = __DIR__ . '/App/Views/docs';
+        if (!is_dir($docsDir)) mkdir($docsDir, 0777, true);
+
+        $guideTemplate = <<<'EOD'
+@indi('docs/layout')
+
+@def('pageTitle')Documentation Technique Exhaustive — Madeline Framework@jeexdef
+
+@def('toc')
+    <a class="sidebar-link" href="#intro">Introduction</a>
+    <a class="sidebar-link" href="#kernel">Cœur du Système (Rek)</a>
+    <a class="sidebar-link" href="#ligeey">Ligeey CLI Reference</a>
+    <a class="sidebar-link" href="#router">Routage & Middleware</a>
+    <a class="sidebar-link" href="#security">Sécurité & Shield</a>
+    <a class="sidebar-link" href="#orm">MadelineORM (Synchro SQL)</a>
+    <a class="sidebar-link" href="#views">Moteur MadelineView</a>
+    <a class="sidebar-link" href="#assets">Gestion des Assets</a>
+    <a class="sidebar-link" href="#request">Requêtes & Formulaires</a>
+    <a class="sidebar-link" href="#components">Architecture Composants</a>
+    <a class="sidebar-link" href="#mail">Mails & Templates</a>
+    <a class="sidebar-link" href="#storage">Storage & Uploads</a>
+    <a class="sidebar-link" href="#config">Configuration & Setup</a>
+    <a class="sidebar-link" href="#swagger">Console API Interactive</a>
+    <a class="sidebar-link" href="#performance">Cache & Performance</a>
+@jeexdef
+
+@def('doc_content')
+
+    <!-- HERO SECTION -->
+    <div id="intro" class="mb-32">
+        <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-[10px] font-black uppercase tracking-[0.3em] mb-12">
+            Spécifications Industrielles · v1.0.0 Stable
+        </div>
+        <h1 class="text-6xl md:text-8xl font-black text-gray-900 dark:text-white tracking-tighter mb-8 leading-[0.85]">
+            Manuel <br>
+            <span class="font-serif italic font-light text-brand-600 dark:text-brand-500 opacity-90">de Référence</span>.
+        </h1>
+        <p class="text-xl text-gray-500 dark:text-white/40 max-w-3xl leading-relaxed font-light">
+            Ce guide constitue la source de vérité pour le développement, le déploiement et la maintenance 
+            d'applications professionnelles sur Madeline.
+        </p>
+    </div>
+
+    <article class="prose-premium">
+
+        <!-- 1. KERNEL -->
+        <section id="kernel" class="mb-32">
+            <h2>Cœur du Système</h2>
+            
+            <div class="p-8 rounded-3xl bg-brand-500/5 border border-brand-500/10 mb-12">
+                <h4 class="text-brand-500 font-black uppercase tracking-widest text-xs mb-4">Installation Rapide</h4>
+                <p class="text-sm mb-4">Initialisez votre projet Madeline en une seule commande :</p>
+                <div class="bg-black/90 rounded-2xl p-6 font-mono text-sm text-brand-400 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-3 opacity-20">
+                        <svg class="w-12 h-12" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>
+                    </div>
+                    composer require digitalartist/madeline-framework
+                </div>
+            </div>
+
+            <p>Le noyau de Madeline (Rek) repose sur une architecture de type micro-kernel, privilégiant l'absence de mémoire statique et une exécution synchrone rapide.</p>
+            
+            <h3>Cycle de Vie d'une Requête</h3>
+            <ol>
+                <li><strong>Point d'entrée</strong> : <code>public/index.php</code> initialise l'autoloader.</li>
+                <li><strong>Rek Boot</strong> : <code>Core\App::run()</code> charge la configuration et détecte l'état du système.</li>
+                <li><strong>Config Dispatch</strong> : Chargement de <code>routes.php</code>.</li>
+                <li><strong>Routage</strong> : Résolution de l'URI et exécution des middlewares.</li>
+                <li><strong>Rendu</strong> : Envoi de la réponse au client.</li>
+            </ol>
+
+            <h3>Configuration</h3>
+            <p>Madeline utilise l'objet <code>Core\Config</code> pour centraliser les paramètres. Les fichiers de configuration sont situés à la racine (<code>config.php</code>).</p>
+<pre><code>use Core\Config;
+
+// Récupération sécurisée
+$dbHost = Config::get('database.host', 'localhost');</code></pre>
+        </section>
+
+        <!-- 2. LIGEEY -->
+        <section id="ligeey" class="mb-32">
+            <h2>Ligeey CLI Reference</h2>
+            <div class="grid md:grid-cols-2 gap-6 my-10">
+                <div class="p-6 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5">
+                    <h4 class="font-bold mb-2">Génération (Amal)</h4>
+                    <ul class="text-sm space-y-1">
+                        <li><code>amal:controller [Nom]</code></li>
+                        <li><code>amal:model [Nom]</code></li>
+                        <li><code>amal:migration [Nom]</code></li>
+                        <li><code>amal:crud [Nom]</code></li>
+                    </ul>
+                </div>
+                <div class="p-6 rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-100 dark:border-white/5">
+                    <h4 class="font-bold mb-2">Maintenance & Serveur</h4>
+                    <ul class="text-sm space-y-1">
+                        <li><code>doxal [port]</code> : Serveur de dev.</li>
+                        <li><code>setal:cache</code> : Vidage intégral.</li>
+                        <li><code>takoo:storage</code> : Symbolic link.</li>
+                        <li><code>yoon:run</code> : Migration SQL.</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- 3. SECURITY -->
+        <section id="security" class="mb-32">
+            <h2>Sécurité & Shield</h2>
+            <p>Le système "Shield" de Madeline injecte des politiques de sécurité strictes au niveau HTTP.</p>
+            
+            <h3>Middlewares de Protection</h3>
+            <ul>
+                <li><strong>CsrfMiddleware</strong> : Protection contre les contrefaçons de requêtes. Utilisez la directive <code>@csrf</code> dans vos formulaires.</li>
+                <li><strong>SecurityHeadersMiddleware</strong> :
+                    <ul>
+                        <li><code>X-Frame-Options: SAMEORIGIN</code> (Prévention Clickjacking)</li>
+                        <li><code>X-XSS-Protection: 1; mode=block</code></li>
+                        <li><code>Content-Security-Policy</code> : Isolation des scripts et styles.</li>
+                    </ul>
+                </li>
+            </ul>
+        </section>
+
+        <!-- ROUTER -->
+        <section id="router" class="mb-32">
+            <h2>Routage & Middleware</h2>
+            <p>Le routeur synchrone de Madeline gère la résolution des URIs et l'exécution de la pile de middlewares.</p>
+            
+            <h3>Définition de Routes</h3>
+            <p>Les routes sont définies dans le fichier <code>routes.php</code> à la racine du projet.</p>
+<pre><code>use Core\Router;
+
+Router::get('/hello', function() {
+    return "Bonjour le monde";
+});
+
+// Avec contrôleur et middleware
+Router::get('/profile', ['App\Controllers\UserController', 'profile'], ['App\Middlewares\AuthMiddleware']);</code></pre>
+
+            <h3>Paramètres de Route</h3>
+            <p>Capturez des segments dynamiques facilement :</p>
+<pre><code>Router::get('/user/{id}', function($id) {
+    return "ID Utilisateur : " . $id;
+});</code></pre>
+        </section>
+
+        <!-- 4. ORM -->
+        <section id="orm" class="mb-32">
+            <h2>MadelineORM</h2>
+            <p>L'ORM propose une sémantique Wolof unique et un système de synchronisation automatique (Zéro-Migration).</p>
+            
+            <h3>Zéro-Migration : Comment ça marche ?</h3>
+            <p>Lorsque vous définissez une propriété dans un modèle, MadelineORM analyse le schéma de la table correspondante. Si la colonne est absente, elle est créée via un <code>ALTER TABLE</code> transparent.</p>
+<pre><code>class Product extends MadelineORM {
+    public string $name;
+    public float $price; // Création auto en DECIMAL/FLOAT dans MySQL
+}</code></pre>
+
+            <h3>Sémantique Wolof complète</h3>
+            <ul>
+                <li><code>->fari(['statut' => 1])</code> : Sélection filtrée multiset.</li>
+                <li><code>->bindu()</code> : Persistance immédiate (Insert/Save).</li>
+                <li><code>->weccit()</code> : Mise à jour thermique des données modifiées.</li>
+                <li><code>->far()</code> : Suppression irréversible de l'objet.</li>
+                <li><code>->loko($id)</code> : Extraction unitaire par identifiant.</li>
+            </ul>
+        </section>
+
+        <!-- 5. VIEWS & COMPONENTS -->
+        <section id="views" class="mb-32">
+            <h2>Moteur MadelineView</h2>
+            <p>Un moteur de templating haute performance compilé en PHP natif.</p>
+
+            <h3>Directives de Templating</h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-100 dark:border-white/10 uppercase tracking-widest text-[10px]">
+                            <th class="py-4">Directive</th>
+                            <th class="py-4">Usage</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-white/5">
+                        <tr><td class="py-4"><code>@baat(...)</code></td><td class="py-4">Boucle Foreach (Wolof: Dire/Parler). Terminé par <code>@jeexbaat</code>.</td></tr>
+                        <tr><td class="py-4"><code>@ndax(...)</code></td><td class="py-4">Structure conditionnelle (Si). Terminé par <code>@jeexndax</code>.</td></tr>
+                        <tr><td class="py-4"><code>@def(...)</code></td><td class="py-4">Définition d'un bloc de contenu. Terminé par <code>@jeexdef</code>.</td></tr>
+                        <tr><td class="py-4"><code>@biir(...)</code></td><td class="py-4">Injection de contenu défini/section.</td></tr>
+                        <tr><td class="py-4"><code>@indi(...)</code></td><td class="py-4">Héritage de layout (Extends).</td></tr>
+                        <tr><td class="py-4"><code>{{ $var }}</code></td><td class="py-4">Affichage échappé (Anti-XSS).</td></tr>
+                        <tr><td class="py-4"><code>{!! $var !!}</code></td><td class="py-4">Affichage brut (HTML non-échappé).</td></tr>
+                        <tr><td class="py-4"><code>@json($var)</code></td><td class="py-4">Encodage JSON automatique (Idéal pour JavaScript natif).</td></tr>
+                        <tr><td class="py-4"><code>@csrf</code></td><td class="py-4">Génération d'un token CSRF caché pour sécuriser les formulaires POST.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 id="assets" class="mt-20">Gestion des Assets</h3>
+            <p>Madeline centralise la gestion des fichiers statiques (CSS, JS, Images) via une fonction globale de helper.</p>
+            
+            <h4>La fonction <code>asset($path)</code></h4>
+            <p>Cette fonction génère une URL absolue vers vos fichiers situés dans le dossier <code>public/</code>. Elle ajoute automatiquement un paramètre de version (cache-busting) basé sur la date de modification du fichier.</p>
+<pre><code>&lt;!-- Dans votre layout ou vue --&gt;
+&lt;link rel="stylesheet" href="{{ asset('css/madeline.css') }}"&gt;
+&lt;script src="{{ asset('js/madeline.js') }}"&gt;&lt;/script&gt;
+&lt;img src="{{ asset('img/logo.png') }}" alt="Logo"&gt;</code></pre>
+
+            <h4>Stylesheet Global</h4>
+            <p>Le framework inclut un fichier <code>public/css/madeline.css</code> pour vos styles globaux et variables CSS personnalisées.</p>
+
+            <h3 id="request" class="mt-20">Requêtes & Formulaires</h3>
+            <p>Le traitement des données entrantes est simplifié par la classe <code>Request</code>, accessible via le helper global <code>request()</code>.</p>
+            
+            <h4>Sémantique Wolof (jël & seet)</h4>
+            <p>Madeline privilégie une syntaxe expressive pour récupérer et valider vos données.</p>
+<pre><code>// Dans votre contrôleur
+$nom = request()->jël('nom'); // Récupère $_POST['nom'] ou $_GET['nom']
+
+if (request()->seet(['nom' => 'required', 'email' => 'required|email'])) {
+    // Validation réussie
+}</code></pre>
+
+            <h4>Support Hybride (JSON & Fichiers)</h4>
+            <p>Madeline détecte automatiquement le format de la requête (Formulaire classique ou JSON) et unifie l'accès aux données.</p>
+            <ul>
+                <li><strong>JSON</strong> : Si le client envoie du JSON, <code>request()->input()</code> récupère les clés directement.</li>
+                <li><strong>Fichiers</strong> : Utilisez <code>request()->file('avatar')</code> pour accéder aux données d'upload.</li>
+            </ul>
+
+            <h4>Métadonnées & Sécurité</h4>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-100 dark:border-white/10 uppercase tracking-widest text-[10px]">
+                            <th class="py-4">Méthode</th>
+                            <th class="py-4">Usage</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100 dark:divide-white/5">
+                        <tr><td class="py-4"><code>method()</code></td><td class="py-4">Retourne le verbe HTTP (GET, POST, etc.).</td></tr>
+                        <tr><td class="py-4"><code>isPost() / isGet()</code></td><td class="py-4">Vérifie le type de requête.</td></tr>
+                        <tr><td class="py-4"><code>ip()</code></td><td class="py-4">Retourne l'adresse IP du client.</td></tr>
+                        <tr><td class="py-4"><code>header('Key')</code></td><td class="py-4">Récupère un en-tête HTTP spécifique.</td></tr>
+                        <tr><td class="py-4"><code>all()</code></td><td class="py-4">Retourne l'ensemble des paramètres fusionnés.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <h3 id="components" class="mt-20">Architecture Composants</h3>
+            <p>Déclarez des composants réutilisables avec une syntaxe proche du HTML moderne.</p>
+<pre><code>&lt;!-- Usage --&gt;
+&lt;x-alert type="info"&gt;Opération réussie.&lt;/x-alert&gt;
+
+&lt;!-- Rendu --&gt;
+Madeline cherche dans App/Views/Components/alert.madeline.php</code></pre>
+        </section>
+
+        <!-- 6. ERROR HANDLING -->
+        <section id="errors" class="mb-32">
+            <h2>Exceptions & Erreurs</h2>
+            <p>Le mode <code>LOCAL</code> active le "Mesh Error Handler", une interface de débogage immersive affichant la stack trace et l'extrait de code fautif.</p>
+            
+            <h3>Personnalisation Production</h3>
+            <p>En production, créez le fichier <code>App/Views/errors/500.madeline.php</code> pour proposer une interface de secours sobre à vos utilisateurs.</p>
+        </section>
+
+        <!-- 7. CONFIGURATION -->
+        <section id="config" class="mb-32">
+            <div class="text-[10px] font-black text-brand-500 uppercase tracking-[0.4em] mb-6">Chapitre VII</div>
+            <h2>Configuration &amp; Setup</h2>
+            <p>Madeline propose un assistant d'installation (Assistant Rek) mais peut également être configuré manuellement.</p>
+            
+            <h3>Assistant Rek</h3>
+            <p>Accessible via <code>/setup</code>, il permet de configurer le nom de l'application, sa description et les accès à la base de données. <strong>Cette étape est facultative</strong> : vous pouvez ignorer la configuration DB pour une utilisation purement statique.</p>
+
+            <h3>Configuration Avancée</h3>
+            <p>Vous pouvez ajouter vos propres clés (API, Services tiers) directement dans <code>config/app.php</code> ou via une classe <code>App\Config\AppConfig</code>.</p>
+<pre><code>// Dans config/app.php
+return [
+    'app' => [ ... ],
+    'api' => [
+        'key' => 'votre_cle_secrete',
+        'stripe_id' => 'sk_test_...'
+    ]
+];
+
+// Utilisation dans votre code
+\$token = \Core\Config::get('api.key');</code></pre>
+        </section>
+
+        <!-- 8. MAILS -->
+        <section id="mail" class="mb-32">
+            <div class="text-[10px] font-black text-brand-500 uppercase tracking-[0.4em] mb-6">Chapitre VIII</div>
+            <h2>Envoi de Mails &amp; Templates</h2>
+            <p>Madeline intègre un système d'envoi d'e-mails HTML élégant, s'appuyant sur le moteur de vues pour une personnalisation totale.</p>
+
+            <h3>Usage de base</h3>
+            <p>Utilisez la méthode statique <code>Mail::send()</code> pour envoyer un e-mail basé sur une vue.</p>
+<pre><code>use Packages\Mail\Mail;
+
+Mail::send(
+    'destinataire@exemple.com', 
+    'Bienvenue !', 
+    'mail/welcome', 
+    ['name' => 'Jean']
+);</code></pre>
+
+            <h3>Templates & Layouts</h3>
+            <p>Les templates de mail sont situés dans <code>App/Views/mail/</code>. Vous pouvez utiliser un layout commun pour garder une identité visuelle cohérente.</p>
+<pre><code>&lt;!-- App/Views/mail/layout.madeline.php --&gt;
+&lt;div class="email-body"&gt;
+    @biir('content')
+&lt;/div&gt;</code></pre>
+
+            <h3>Configuration</h3>
+            <p>La configuration SMTP est gérée dans <code>config/app.php</code> sous la clé <code>mail</code>. En mode local sans serveur mail configuré, l'envoi est simulé dans les logs PHP.</p>
+        </section>
+
+        <!-- 9. STORAGE -->
+        <section id="storage" class="mb-32">
+            <div class="text-[10px] font-black text-brand-500 uppercase tracking-[0.4em] mb-6">Chapitre IX</div>
+            <h2>Gestion du Storage</h2>
+            <p>L'abstraction Storage simplifie les opérations de fichiers sur le système local ou cloud.</p>
+<pre><code>use Packages\Storage\Storage;
+
+// Enregistrement
+$path = Storage::upload($_FILES['avatar'], 'profiles');
+
+// Récupération URL
+$url = Storage::url($path);</code></pre>
+        </section>
+
+        <!-- 10. API & SWAGGER -->
+        <section id="swagger" class="mb-32">
+            <div class="text-[10px] font-black text-brand-500 uppercase tracking-[0.4em] mb-6">Chapitre X</div>
+            <h2>Console API Interactive</h2>
+            <p>Madeline intègre nativement Swagger UI pour documenter et tester vos APIs en temps réel.</p>
+            <ul>
+                <li><strong>URL</strong> : Accédez à <code>/api/docs/ui</code> pour l'interface graphique.</li>
+                <li><strong>JSON</strong> : Le schéma OpenAPI est disponible sur <code>/api/docs</code>.</li>
+            </ul>
+            <p>Cette documentation est auto-générée à partir de vos contrôleurs et de la configuration API.</p>
+        </section>
+
+        <!-- 11. PERFORMANCE -->
+        <section id="performance" class="mb-32">
+            <div class="text-[10px] font-black text-brand-500 uppercase tracking-[0.4em] mb-6">Chapitre XI</div>
+            <h2>Cache & Performance</h2>
+            <p>Le framework est optimisé pour une exécution ultra-rapide (< 1ms pour le routage).</p>
+            <ul>
+                <li><strong>View Cache</strong> : Les vues compilées sont stockées dans <code>storage/cache/views</code>.</li>
+                <li><strong>Turbo SPA</strong> : Grâce à <code>madeline.js</code>, les navigations ne rechargent que le contenu utile via AJAX/Fetch.</li>
+                <li><strong>Auto-Invalidation</strong> : Le cache des vues se régénère automatiquement si le fichier source est modifié.</li>
+            </ul>
+        </section>
+
+    </article>
+@jeexdef
+EOD;
+
+        $apiTemplate = <<<'EOD'
+@indi('docs/layout')
+
+@def('pageTitle')Console API Interactive — Madeline@jeexdef
+
+@def('extra_head')
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui.css" />
+<style>
+    :root {
+        --sw-bg: #ffffff;
+        --sw-text: #1f2937;
+        --sw-title: #111827;
+        --sw-border: rgba(0, 0, 0, 0.05);
+        --sw-card-bg: rgba(255, 255, 255, 0.8);
+        --sw-input-bg: #f9fafb;
+    }
+
+    .dark {
+        --sw-bg: transparent;
+        --sw-text: #9ca3af;
+        --sw-title: #ffffff;
+        --sw-border: rgba(255, 255, 255, 0.05);
+        --sw-card-bg: rgba(255, 255, 255, 0.02);
+        --sw-input-bg: rgba(255, 255, 255, 0.03);
+    }
+
+    /* Swagger UI Premium Overrides */
+    #swagger-ui { background: transparent; padding-bottom: 5rem; width: 100%; max-width: 100%; }
+    
+    .swagger-ui { font-family: 'Plus Jakarta Sans', sans-serif !important; }
+    
+    /* Text & Titles */
+    .swagger-ui .info .title, .swagger-ui .model-title, .swagger-ui .opblock-summary-path { 
+        color: var(--sw-title) !important; font-weight: 800 !important; letter-spacing: -0.02em !important; 
+    }
+    .swagger-ui .info p, .swagger-ui .info li, .swagger-ui .info table, .swagger-ui .model, .swagger-ui .prop-type, .swagger-ui .opblock-summary-description { 
+        color: var(--sw-text) !important; font-size: 13px !important; font-weight: 300 !important;
+    }
+    
+    /* Global Containers */
+    .swagger-ui .scheme-container { 
+        background: var(--sw-card-bg) !important; border: 1px solid var(--sw-border) !important;
+        border-radius: 2rem !important; box-shadow: 0 20px 50px rgba(0,0,0,0.05) !important; 
+        margin: 3rem 0 !important; padding: 2rem !important; backdrop-filter: blur(10px);
+    }
+    .dark .swagger-ui .scheme-container { box-shadow: 0 20px 50px rgba(0,0,0,0.3) !important; }
+
+    .swagger-ui select { 
+        background: var(--sw-input-bg) !important; color: var(--sw-title) !important; border: 1px solid var(--sw-border) !important; 
+        border-radius: 0.75rem !important; padding: 0.5rem 1rem !important;
+    }
+    
+    /* Operation Blocks */
+    .swagger-ui .opblock { 
+        border-radius: 1.5rem !important; background: var(--sw-card-bg) !important; 
+        border: 1px solid var(--sw-border) !important; box-shadow: 0 4px 20px rgba(0,0,0,0.02) !important; 
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        margin-bottom: 1.25rem !important; overflow: hidden;
+    }
+    .dark .swagger-ui .opblock { box-shadow: 0 4px 20px rgba(0,0,0,0.2) !important; }
+    
+    .swagger-ui .opblock:hover { transform: translateY(-4px); border-color: rgba(139, 92, 246, 0.3) !important; }
+    
+    /* Method Badges */
+    .swagger-ui .opblock .opblock-summary-method { 
+        border-radius: 0.75rem !important; font-weight: 900 !important; text-transform: uppercase; 
+        font-size: 10px !important; padding: 6px 12px !important; border: none !important;
+    }
+    .swagger-ui .opblock-get .opblock-summary-method { background: #8b5cf6 !important; color: white !important; }
+    .swagger-ui .opblock-post .opblock-summary-method { background: #10b981 !important; color: white !important; }
+    
+    /* Buttons */
+    .swagger-ui .btn { 
+        border-radius: 1rem !important; font-weight: 700 !important; text-transform: none !important; 
+        transition: all 0.2s !important; border: 1px solid var(--sw-border) !important;
+        padding: 8px 20px !important; font-size: 12px !important; color: var(--sw-text) !important;
+        background: transparent !important;
+    }
+    .swagger-ui .btn:hover { background: var(--sw-input-bg) !important; color: var(--sw-title) !important; }
+    .swagger-ui .btn.execute { 
+        background-color: #8b5cf6 !important; border: none !important; color: white !important; 
+        box-shadow: 0 10px 20px rgba(139, 92, 246, 0.2) !important;
+    }
+    .swagger-ui .btn.execute:hover { background-color: #7c3aed !important; transform: scale(1.02); }
+    
+    /* Internal sections */
+    .swagger-ui .opblock-section-header { 
+        background: var(--sw-input-bg) !important; border-radius: 1rem !important; 
+        padding: 1rem !important; font-weight: 700 !important; color: var(--sw-title) !important;
+    }
+    .swagger-ui section.models { 
+        border: 1px solid var(--sw-border) !important; border-radius: 2rem !important; 
+        background: var(--sw-card-bg) !important; margin-top: 5rem !important; padding: 2rem !important;
+    }
+    .swagger-ui section.models .model-container { background: transparent !important; margin-top: 1rem; }
+    
+    /* Inputs */
+    .swagger-ui input[type=text] {
+        background: var(--sw-input-bg) !important; border: 1px solid var(--sw-border) !important;
+        border-radius: 0.75rem !important; color: var(--sw-title) !important; padding: 10px 15px !important;
+    }
+
+    /* Table Colors */
+    .swagger-ui table thead tr td, .swagger-ui table thead tr th { color: var(--sw-title) !important; border-bottom: 1px solid var(--sw-border) !important; }
+    .swagger-ui .parameters-col_description textarea { background: var(--sw-input-bg) !important; color: var(--sw-title) !important; border: 1px solid var(--sw-border) !important; border-radius: 0.5rem; }
+
+    /* Hide topbar */
+    .swagger-ui .topbar { display: none !important; }
+
+    /* Custom Animation */
+    @keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    .animate-slide-up { animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+</style>
+@jeexdef
+
+@def('toc')
+    <a href="{{ url('docs') }}" class="sidebar-link group">
+        <svg class="w-4 h-4 mr-3 opacity-40 group-hover:opacity-100 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Retour au Guide
+    </a>
+    <div class="pt-8 mt-8 border-t border-gray-100 dark:border-white/5">
+        <h5 class="sidebar-title">Ressources API</h5>
+        <div class="space-y-1">
+            <a href="#/User" class="sidebar-link opacity-60 hover:opacity-100">
+                <span class="w-1.5 h-1.5 rounded-full bg-brand-500 mr-3"></span>
+                Users API
+            </a>
+            <a href="#/Auth" class="sidebar-link opacity-60 hover:opacity-100">
+                <span class="w-1.5 h-1.5 rounded-full bg-green-500 mr-3"></span>
+                Auth API
+            </a>
+        </div>
+    </div>
+@jeexdef
+
+@def('doc_content')
+<div class="mb-20 animate-slide-up">
+    <div class="inline-flex items-center gap-3 px-4 py-2 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-500 text-[10px] font-black uppercase tracking-[0.3em] mb-12">
+        <span class="w-2 h-2 rounded-full bg-brand-500 animate-pulse"></span>
+        Interactive Console Interface
+    </div>
+    <h1 class="text-6xl md:text-7xl font-black text-gray-900 dark:text-white mb-8 tracking-tighter leading-none">
+        Console <span class="text-brand-500">API</span>.
+    </h1>
+    <p class="text-xl text-gray-500 dark:text-white/40 max-w-2xl leading-relaxed font-light">
+        Testez vos endpoints en temps réel. Cette interface synchronise automatiquement 
+        votre logique serveur avec la spécification OpenAPI.
+    </p>
+</div>
+
+<!-- Placeholder Swagger UI -->
+<div id="swagger-ui" class="animate-slide-up" style="animation-delay: 0.2s"></div>
+
+<script src="https://unpkg.com/swagger-ui-dist@5.11.0/swagger-ui-bundle.js" crossorigin></script>
+<script>
+    function initSwagger() {
+        if (!window.SwaggerUIBundle) {
+            console.log('Swagger bundle not ready, retrying...');
+            setTimeout(initSwagger, 50);
+            return;
+        }
+
+        fetch('/api/docs')
+            .then(res => res.json())
+            .then(spec => {
+                const ui = SwaggerUIBundle({
+                    spec: spec,
+                    dom_id: '#swagger-ui',
+                    deepLinking: true,
+                    presets: [ SwaggerUIBundle.presets.apis, SwaggerUIBundle.SwaggerUIStandalonePreset ],
+                    layout: "BaseLayout",
+                    docExpansion: 'list',
+                    filter: true,
+                });
+                window.ui = ui;
+            });
+    }
+    
+    initSwagger();
+</script>
+@jeexdef
+EOD;
+
+        $docsLayoutTemplate = <<<'EOD'
+@indi('layout')
+
+@def('head')
+    <style>
+        :root {
+            --doc-title-color: #111827;
+            --doc-text-color: #4b5563;
+            --doc-bg-glass: rgba(255, 255, 255, 0.4);
+            --doc-border: rgba(0, 0, 0, 0.05);
+            --doc-code-bg: rgba(139, 92, 246, 0.08);
+            --doc-pre-bg: #f9fafb;
+        }
+
+        .dark {
+            --doc-title-color: #ffffff;
+            --doc-text-color: #9ca3af;
+            --doc-bg-glass: rgba(3, 3, 5, 0.4);
+            --doc-border: rgba(255, 255, 255, 0.03);
+            --doc-code-bg: rgba(139, 92, 246, 0.15);
+            --doc-pre-bg: #050508;
+        }
+
+        /* Typography Premium spécifique à la Documentation */
+        .prose-premium h2 { 
+            scroll-margin-top: 7rem; font-weight: 800; letter-spacing: -0.04em; 
+            color: var(--doc-title-color); border-bottom: 1px solid var(--doc-border); 
+            padding-bottom: 0.75rem; margin-top: 5rem; margin-bottom: 2rem; font-size: 2.25rem; 
+        }
+        .prose-premium h3 { 
+            scroll-margin-top: 7rem; font-weight: 700; color: var(--doc-title-color); 
+            margin-top: 3rem; margin-bottom: 1.25rem; font-size: 1.5rem; letter-spacing: -0.02em; 
+        }
+        .prose-premium p { color: var(--doc-text-color); line-height: 1.9; margin-bottom: 1.5rem; font-size: 1.05rem; font-weight: 300; }
+        .prose-premium code { background: var(--doc-code-bg); color: #8b5cf6; padding: 0.2em 0.45em; border-radius: 8px; font-size: 0.85em; font-weight: 500; font-family: 'JetBrains Mono', monospace; border: 1px solid rgba(139, 92, 246, 0.1); }
+        .prose-premium pre { background: var(--doc-pre-bg) !important; border: 1px solid var(--doc-border); border-radius: 1.5rem; padding: 2rem; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1); margin-top: 2rem; margin-bottom: 3rem; overflow-x: auto; position: relative; }
+        .dark .prose-premium pre { box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6); }
+        .prose-premium pre::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.3), transparent); }
+        .prose-premium blockquote { border-left: 2px solid #8b5cf6; background: linear-gradient(90deg, rgba(139, 92, 246, 0.05), transparent); border-radius: 0 1rem 1rem 0; padding: 1.5rem 2rem; font-style: italic; color: var(--doc-text-color); margin: 3rem 0; font-family: 'Playfair Display', serif; font-size: 1.25rem; }
+        .prose-premium ul { list-style-type: none; padding-left: 0; margin-bottom: 2rem; }
+        .prose-premium ul li { position: relative; padding-left: 1.75rem; color: var(--doc-text-color); margin-bottom: 0.75rem; font-weight: 300; }
+        .prose-premium ul li::before { content: "•"; position: absolute; left: 0; color: #8b5cf6; font-size: 1.5rem; line-height: 1; top: -0.1rem; }
+        
+        /* Sidebar Link Styling */
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            padding: 0.75rem 1.25rem;
+            border-radius: 1rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--doc-text-color);
+            transition: all 0.3s cubic-bezier(0.1, 0.5, 0.5, 1);
+            border: 1px solid transparent;
+            margin-bottom: 0.25rem;
+        }
+        .sidebar-link:hover {
+            color: var(--doc-title-color);
+            background: rgba(139, 92, 246, 0.05);
+            transform: translateX(4px);
+        }
+        .sidebar-link.active {
+            color: #8b5cf6;
+            background: linear-gradient(90deg, rgba(139, 92, 246, 0.1), rgba(139, 92, 246, 0.02));
+            border-color: rgba(139, 92, 246, 0.1);
+        }
+
+        .sidebar-title {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            font-weight: 800;
+            color: var(--doc-text-color);
+            opacity: 0.5;
+            padding: 0 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .doc-aside-glass {
+            background: var(--doc-bg-glass);
+            backdrop-filter: blur(10px);
+            border-radius: 2rem;
+            padding: 1.5rem;
+            border: 1px solid var(--doc-border);
+        }
+
+        /* Custom Mini-Scrollbar for Sidebar */
+        .sidebar-scroll {
+            max-height: calc(100vh - 350px);
+            overflow-y: auto;
+            padding-right: 10px;
+        }
+        .sidebar-scroll::-webkit-scrollbar { width: 3px; }
+        .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
+        .sidebar-scroll::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.1); border-radius: 10px; }
+        .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.3); }
+
+        /* Copy Button Styles */
+        .copy-btn {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.5rem;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px);
+            z-index: 10;
+        }
+        .copy-btn:hover {
+            background: rgba(139, 92, 246, 0.2);
+            color: #fff;
+            border-color: rgba(139, 92, 246, 0.3);
+            transform: scale(1.05);
+        }
+        .copy-btn.copied {
+            background: #10b981;
+            color: white;
+            border-color: #10b981;
+        }
+    </style>
+    @biir('extra_head')
+@jeexdef
+
+@def('content')
+    <div class="max-w-[1400px] mx-auto px-6 py-12 lg:py-16 flex flex-col lg:flex-row gap-20 min-h-screen">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="w-full lg:w-80 flex-shrink-0">
+            <div class="sticky top-32 space-y-12">
+                <div class="animate-fade-in">
+                    <h4 class="sidebar-title">Architecture & Guide</h4>
+                    <div class="space-y-1 sidebar-scroll">
+                        @biir('toc')
+                    </div>
+                </div>
+
+                <div class="doc-aside-glass group transition-all hover:border-brand-500/20 shadow-2xl overflow-hidden relative">
+                    <div class="absolute inset-0 bg-gradient-to-br from-brand-600/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    <div class="relative z-10">
+                        <p class="text-[9px] font-black text-brand-500 uppercase tracking-[0.2em] mb-3">Statut du Système</p>
+                        <p class="text-[13px] text-gray-500 dark:text-white/60 leading-relaxed mb-6 font-light">Madeline <strong>v1.0.0 Stable</strong> est optimisé pour les déploiements industriels.</p>
+                        <a href="https://github.com/digitalartist221/madeline-framework" target="_blank" class="text-[10px] font-bold text-gray-900 dark:text-white hover:text-brand-400 transition-all uppercase tracking-widest flex items-center gap-2 group/btn">
+                            GitHub Repository
+                            <svg class="w-3 h-3 group-hover/btn:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 min-w-0 max-w-4xl animate-fade-in" style="animation-delay: 0.1s">
+            @biir('doc_content')
+            
+            <!-- Page Navigation Footnote -->
+            <div class="mt-32 pt-12 border-t border-gray-100 dark:border-white/[0.05] flex justify-between items-center text-sm">
+                <div class="text-gray-400 dark:text-white/20">© Madeline Framework</div>
+                <div class="flex gap-6 uppercase tracking-widest text-[10px] font-bold">
+                    <a href="{{ url('/') }}" class="hover:text-brand-500 dark:hover:text-white transition-colors">Accueil</a>
+                    <a href="{{ url('api/docs/ui') }}" class="hover:text-brand-500 dark:hover:text-white transition-colors">API Console</a>
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Ajout des boutons de copie sur les blocs de code
+            document.querySelectorAll('pre').forEach(block => {
+                // Ensure the block is relative for absolute positioning of the button
+                if (getComputedStyle(block).position === 'static') {
+                    block.style.position = 'relative';
+                }
+
+                const button = document.createElement('button');
+                button.className = 'copy-btn';
+                button.innerHTML = `
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                `;
+
+                button.addEventListener('click', async () => {
+                    const code = block.querySelector('code');
+                    const text = code ? code.innerText : block.innerText;
+
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        button.classList.add('copied');
+                        button.innerHTML = `
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                        `;
+
+                        setTimeout(() => {
+                            button.classList.remove('copied');
+                            button.innerHTML = `
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                </svg>
+                            `;
+                        }, 2000);
+                    } catch (err) {
+                        console.error('Erreur lors de la copie :', err);
+                    }
+                });
+
+                block.appendChild(button);
+            });
+        });
+    </script>
+@jeexdef
+EOD;
+
+        $welcomeTemplate = <<<'EOD'
+@indi('layout')
+
+@def('pageTitle')L'Art du PHP Moderne@jeexdef
+
+@def('content')
+
+    <!-- HERO SECTION IMMERSIVE -->
+    <div class="relative min-h-[90vh] flex items-center justify-center px-6 pt-20 pb-32 overflow-hidden border-b border-white/[0.05]">
+        
+        <!-- Abstract Decoration -->
+        <div class="absolute inset-0 pointer-events-none overflow-hidden">
+            <div class="absolute -top-24 -left-24 w-96 h-96 bg-brand-600/10 rounded-full blur-[120px] animate-pulse"></div>
+            <div class="absolute top-1/2 -right-24 w-96 h-96 bg-indigo-600/10 rounded-full blur-[120px] animate-pulse" style="animation-delay: 2s"></div>
+            
+            <!-- Grid Pattern -->
+            <div class="absolute inset-0 opacity-[0.03]" style="background-image: radial-gradient(white 1px, transparent 0); background-size: 40px 40px;"></div>
+        </div>
+
+        <div class="max-w-7xl mx-auto text-center relative z-10">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-[10px] font-bold uppercase tracking-[0.3em] mb-12 animate-fade-in">
+                Excellence Architecturale · PHP 8.3
+            </div>
+
+            <h1 class="text-7xl md:text-[9rem] font-black text-gray-900 dark:text-white tracking-tighter leading-[0.85] mb-10">
+                L'Art du <br>
+                <span class="font-serif italic font-light text-transparent bg-clip-text bg-gradient-to-r from-brand-400 via-gray-900 dark:via-white to-gray-500">Madeline</span>.
+            </h1>
+
+            <p class="text-xl md:text-2xl text-gray-500 dark:text-white/40 max-w-3xl mx-auto leading-relaxed mb-16 font-light">
+                Le framework PHP de nouvelle génération qui fusionne vitesse extrême, 
+                <span class="text-gray-900 dark:text-white font-medium italic">sémantique Wolof majestueuse</span> 
+                et expérience développeur sans compromis.
+            </p>
+
+            <div class="flex flex-col sm:flex-row items-center justify-center gap-6">
+                <a href="{{ url('docs') }}" class="group relative w-full sm:w-auto px-12 py-5 bg-gray-900 dark:bg-white text-white dark:text-black font-black rounded-full transition-all hover:scale-105 active:scale-95 shadow-[0_20px_40px_rgba(0,0,0,0.1)] dark:shadow-[0_20px_40px_rgba(255,255,255,0.1)] flex items-center justify-center gap-3">
+                    Bâtir avec Madeline
+                    <svg class="w-5 h-5 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                </a>
+            </div>
+
+            <!-- Dashboard Mockup/Visual -->
+            <div class="mt-32 relative group">
+                <div class="absolute -inset-1 bg-gradient-to-r from-brand-500 to-indigo-500 rounded-[2rem] blur opacity-10 group-hover:opacity-20 transition duration-1000"></div>
+                <div class="relative bg-white dark:bg-[#08080c] border border-gray-200 dark:border-white/10 rounded-[2rem] p-4 lg:p-8 shadow-2xl overflow-hidden aspect-video lg:aspect-auto">
+                    <div class="flex items-center gap-2 mb-6 border-b border-white/5 pb-4">
+                        <div class="w-3 h-3 rounded-full bg-red-500/20 dark:bg-red-500/30"></div>
+                        <div class="w-3 h-3 rounded-full bg-yellow-500/20 dark:bg-yellow-500/30"></div>
+                        <div class="w-3 h-3 rounded-full bg-green-500/20 dark:bg-green-500/30"></div>
+                        <div class="ml-4 px-3 py-1 bg-gray-100 dark:bg-white/5 rounded-lg text-[10px] font-mono text-gray-500 dark:text-white/40 tracking-wider">App/Models/User.php</div>
+                    </div>
+                    
+                    <div class="grid lg:grid-cols-2 gap-12 text-left">
+                        <div class="font-mono text-sm leading-relaxed space-y-1">
+                            <p><span class="text-brand-500 dark:text-brand-400">class</span> <span class="text-amber-600 dark:text-amber-400 text-lg font-bold">User</span> <span class="text-brand-500 dark:text-brand-400">extends</span> <span class="text-indigo-600 dark:text-indigo-400 italic">MadelineORM</span> {</p>
+                            <p class="text-gray-400 dark:text-white/20 pl-4">// Le système Zéro-Migration veille.</p>
+                            <p class="pl-4"><span class="text-brand-500 dark:text-brand-400">public string</span> <span class="text-blue-600 dark:text-blue-300">$name</span>;</p>
+                            <p class="pl-4"><span class="text-brand-500 dark:text-brand-400">public string</span> <span class="text-blue-600 dark:text-blue-300">$email</span>;</p>
+                            <p class="pl-4"><span class="text-brand-500 dark:text-brand-400">public int</span> <span class="text-blue-600 dark:text-blue-300">$age</span>;</p>
+                            <p class="text-white/10 pl-4 mt-4">// Vos colonnes MySQL s'auto-ajustent.</p>
+                            <p><span class="text-gray-500">}</span></p>
+                        </div>
+                        <div class="hidden lg:block space-y-6">
+                            <h3 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Philosophie <br> <span class="font-serif italic font-light text-brand-600 dark:text-brand-400">Zéro-Migration</span>.</h3>
+                            <p class="text-gray-500 dark:text-white/40 text-sm leading-relaxed">
+                                Finies les galères de migrations SQL. Madeline lit vos propriétés PHP et altère vos tables MySQL en temps réel. 
+                                <span class="text-brand-600 dark:text-brand-400 font-bold block mt-2 tracking-widest text-[10px] uppercase">Codé avec perfection.</span>
+                            </p>
+                            <div class="pt-6 grid grid-cols-2 gap-4">
+                                <div class="p-4 rounded-2xl bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 group hover:border-brand-500/30 transition-colors">
+                                    <div class="text-brand-600 dark:text-brand-400 font-black text-xl mb-1">->fari()</div>
+                                    <div class="text-[9px] uppercase tracking-widest text-gray-400 dark:text-white/30">Select Wolof</div>
+                                </div>
+                                <div class="p-4 rounded-2xl bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 group hover:border-brand-500/30 transition-colors">
+                                    <div class="text-indigo-600 dark:text-indigo-400 font-black text-xl mb-1">->bindu()</div>
+                                    <div class="text-[9px] uppercase tracking-widest text-gray-400 dark:text-white/30">Insert Wolof</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FEATURES GRID PREMIUM -->
+    <section class="py-32 px-6 max-w-[1400px] mx-auto">
+        <div class="text-center mb-24 space-y-4">
+            <h2 class="text-4xl md:text-6xl font-black text-gray-900 dark:text-white tracking-tighter">Pourquoi <span class="font-serif italic font-light text-brand-600 dark:text-brand-400">Madeline</span> ?</h2>
+            <p class="text-gray-500 dark:text-white/40 max-w-xl mx-auto text-lg leading-relaxed">
+                Une ingénierie de pointe au service d'une syntaxe majestueuse.
+            </p>
+        </div>
+
+        <div class="grid md:grid-cols-3 gap-8">
+            <!-- Fast -->
+            <div class="group p-10 rounded-[2.5rem] bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 hover:bg-white dark:hover:bg-white/[0.04] transition-all hover:-translate-y-2 hover:shadow-xl dark:hover:shadow-none">
+                <div class="w-16 h-16 bg-brand-500/10 rounded-2xl flex items-center justify-center text-brand-600 dark:text-brand-400 mb-8 border border-brand-500/20 group-hover:scale-110 transition-transform">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">Vitesse Extrême</h3>
+                <p class="text-gray-500 dark:text-white/40 leading-relaxed text-sm">
+                    Routage synchrone et mode Turbo SPA natif. Aucun rechargement de page, seulement des transitions instantanées de 0.1ms.
+                </p>
+            </div>
+
+            <!-- Secure -->
+            <div class="group p-10 rounded-[2.5rem] bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 hover:bg-white dark:hover:bg-white/[0.04] transition-all hover:-translate-y-2 hover:shadow-xl dark:hover:shadow-none">
+                <div class="w-16 h-16 bg-brand-500/10 rounded-2xl flex items-center justify-center text-brand-600 dark:text-brand-400 mb-8 border border-brand-500/20 group-hover:scale-110 transition-transform">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">Bouclier Natif</h3>
+                <p class="text-gray-500 dark:text-white/40 leading-relaxed text-sm">
+                    Protection anti-XSS et CSRF intégrées. Middlewares de sécurité HTTP configurés pour une tranquillité architecturale totale.
+                </p>
+            </div>
+
+            <!-- Wolof -->
+            <div class="group p-10 rounded-[2.5rem] bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/5 hover:bg-white dark:hover:bg-white/[0.04] transition-all hover:-translate-y-2 hover:shadow-xl dark:hover:shadow-none">
+                <div class="w-16 h-16 bg-brand-500/10 rounded-2xl flex items-center justify-center text-brand-600 dark:text-brand-400 mb-8 border border-brand-500/20 group-hover:scale-110 transition-transform">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.065M15 3a9 9 0 11-3.477 17.318"></path></svg>
+                </div>
+                <h3 class="text-2xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">Identité Wolof</h3>
+                <p class="text-gray-500 dark:text-white/40 leading-relaxed text-sm">
+                    La seule sémantique PHP au monde intégrant les terminologies Wolof pour une lisibilité et une proximité culturelle sans égale.
+                </p>
+            </div>
+        </div>
+    </section>
+
+@jeexdef
+EOD;
+
+        $layoutTemplate = <<<'EOD'
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@biir('pageTitle') — {{ \Core\Config::get('app.name', 'Madeline Framework') }}</title>
+    <meta name="description" content="{{ \Core\Config::get('app.description', 'Infrastructure PHP 8.3 Industrielle') }}">
+    
+    <!-- Core Scripts -->
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="{{ asset('js/madeline.js') }}"></script>
+    
+    <!-- Modern Typography & Styles -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ asset('css/madeline.css') }}">
+    
+    <script>
+        // Theme Initialization (Blocking to avoid flicker)
+        (function() {
+            const theme = localStorage.getItem('madeline-theme') || 'dark';
+            if (theme === 'dark') document.documentElement.classList.add('dark');
+        })();
+
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff', 100: '#ede9fe', 200: '#ddd6fe', 300: '#c4b5fd',
+                            400: '#a78bfa', 500: '#8b5cf6', 600: '#7c3aed', 700: '#6d28d9',
+                            800: '#5b21b6', 900: '#4c1d95',
+                        }
+                    },
+                    borderRadius: { '4xl':'2rem', '5xl':'2.5rem', '6xl':'3rem' },
+                    animation: {
+                        'pulse-slow': 'pulse 8s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 6s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-color: #050510;
+            --glass-bg: rgba(255, 255, 255, 0.8);
+            --border-color: rgba(0, 0, 0, 0.05);
+            --card-bg: #F9FAFB;
+        }
+
+        .dark {
+            --bg-color: #030305;
+            --text-color: #e5e7eb;
+            --glass-bg: rgba(3, 3, 5, 0.75);
+            --border-color: rgba(255, 255, 255, 0.05);
+            --card-bg: rgba(255, 255, 255, 0.02);
+        }
+
+        body { 
+            background-color: var(--bg-color); 
+            color: var(--text-color); 
+            overflow-x: hidden; 
+            scroll-behavior: smooth;
+            transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1), color 0.4s;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Custom Scrollbar Premium */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(139, 92, 246, 0.2); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(139, 92, 246, 0.5); }
+
+        /* Glassmorphism Classes */
+        .glass-header {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.4s, border-color 0.4s;
+        }
+
+        .floating-card { 
+            background: var(--glass-bg); 
+            backdrop-filter: blur(20px); 
+            border: 1px solid var(--border-color); 
+            box-shadow: 0 20px 60px rgba(0,0,0,0.02); 
+            transition: transform 0.3s ease, box-shadow 0.3s ease; 
+        }
+        .floating-card:hover { transform: translateY(-4px); box-shadow: 0 30px 80px rgba(0,0,0,0.04); }
+
+        /* Dynamic Background Blobs */
+        .blob {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(140px);
+            z-index: -1;
+            opacity: 0.15;
+            pointer-events: none;
+            transition: opacity 1s;
+        }
+
+        .dark .blob { opacity: 0.08; }
+        .blob-1 { top: -200px; left: -100px; background: #6d28d9; }
+        .blob-2 { bottom: -200px; right: -100px; background: #3b82f6; }
+
+        /* Theme Toggle Button */
+        .theme-toggle-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border-color);
+            background: var(--glass-bg);
+            color: var(--text-color);
+            transition: all 0.3s cubic-bezier(0.1, 0.5, 0.5, 1);
+            cursor: pointer;
+        }
+        .theme-toggle-btn:hover {
+            transform: scale(1.1) rotate(12deg);
+            border-color: rgba(139, 92, 246, 0.5);
+            color: #8b5cf6;
+        }
+
+        .btn-dark { background: var(--text-color); color: var(--bg-color); transition: all 0.3s ease; }
+        .btn-dark:hover { transform: scale(1.02); box-shadow: 0 10px 25px rgba(0,0,0,0.1); }
+
+        #madeline-loader { position:fixed; top:0; left:0; height:2px; background:#8b5cf6; z-index:9999; width:0; transition:width 0.3s ease; }
+        .nav-link { display:flex; align-items:center; gap:1rem; padding:0.875rem 1rem; border-radius:1rem; transition:all 0.2s; }
+        .nav-link:hover { background:rgba(255,255,255,0.06); }
+        .nav-link.active { background:rgba(139, 92, 246, 0.15); }
+        .nav-link.active svg { opacity:1; color:#a78bfa; }
+        .nav-link.active span { color:#a78bfa; }
+        .nav-link svg { opacity:0.35; transition:opacity 0.2s; }
+        .nav-link:hover svg { opacity:0.8; }
+        .nav-link span { font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:0.15em; color:#6b7280; }
+        .nav-link:hover span { color:#d1d5db; }
+        .sidebar-section-label { padding:0 1rem; font-size:8px; font-weight:900; text-transform:uppercase; letter-spacing:0.35em; color:#374151; margin-bottom:0.5rem; }
+        .badge { display:inline-flex; align-items:center; justify-content:center; min-width:18px; height:18px; padding:0 5px; border-radius:50px; font-size:8px; font-weight:900; background:rgba(139, 92, 246, 0.2); color:#a78bfa; margin-left:auto; }
+    </style>
+    @biir('head')
+</head>
+<body>
+    <!-- Ambient Background -->
+    <div class="blob blob-1 animate-pulse-slow"></div>
+    <div class="blob blob-2 animate-pulse-slow" style="animation-delay: 2s"></div>
+    <div id="madeline-loader"></div>
+
+@miingi fi
+    <!-- =============================== -->
+    <!-- SIDEBAR — Authenticated Layout  -->
+    <!-- =============================== -->
+    <aside class="fixed top-0 left-0 h-full w-64 bg-[#050510] text-white z-50 flex flex-col shadow-2xl overflow-y-auto">
+        <!-- Logo -->
+        <div class="px-8 py-10 flex items-center gap-3 border-b border-white/5">
+            <div class="w-9 h-9 bg-brand-500 rounded-xl flex items-center justify-center shadow-lg shadow-brand-500/30 flex-shrink-0">
+                <div class="w-2.5 h-2.5 bg-white rounded-full"></div>
+            </div>
+            <div>
+                <span class="text-lg font-black tracking-tighter">Business<span class="text-brand-500">.</span></span>
+                <p class="text-[7px] font-black text-gray-600 uppercase tracking-[0.3em]">Madeline Suite</p>
+            </div>
+        </div>
+
+        <nav class="flex-1 px-4 py-6 space-y-8 overflow-y-auto">
+            <div class="space-y-1">
+                <p class="sidebar-section-label">Gestion Financière</p>
+                <a href="/dashboard" class="nav-link {{ $_SERVER['REQUEST_URI'] === '/dashboard' ? 'active' : '' }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                    <span>Cockpit</span>
+                </a>
+                <a href="/documents" class="nav-link {{ str_contains($_SERVER['REQUEST_URI'], '/documents') ? 'active' : '' }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    <span>Factures</span>
+                </a>
+                <a href="/depenses" class="nav-link {{ str_contains($_SERVER['REQUEST_URI'], '/depenses') ? 'active' : '' }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                    <span>Dépenses</span>
+                </a>
+                <a href="/contrats" class="nav-link {{ str_contains($_SERVER['REQUEST_URI'], '/contrats') ? 'active' : '' }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
+                    <span>Juridique</span>
+                </a>
+            </div>
+
+            <div class="space-y-1">
+                <p class="sidebar-section-label">Relations & CRM</p>
+                <a href="/clients" class="nav-link {{ str_contains($_SERVER['REQUEST_URI'], '/clients') ? 'active' : '' }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                    <span>Clients CRM</span>
+                </a>
+                <a href="/entreprises" class="nav-link {{ str_contains($_SERVER['REQUEST_URI'], '/entreprises') ? 'active' : '' }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg>
+                    <span>Entités</span>
+                </a>
+                <a href="/produits" class="nav-link {{ str_contains($_SERVER['REQUEST_URI'], '/produits') ? 'active' : '' }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-14L4 7m8 4v10M4 7v10l8 4"/></svg>
+                    <span>Catalogue</span>
+                </a>
+            </div>
+
+            <?php if (($_SESSION['user_role'] ?? '') === 'admin'): ?>
+            <div class="space-y-1">
+                <p class="sidebar-section-label" style="color:#6d28d9;">Administration</p>
+                <a href="/equipe" class="nav-link {{ str_contains($_SERVER['REQUEST_URI'], '/equipe') ? 'active' : '' }}">
+                    <svg class="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+                    <span>Équipe</span>
+                    <span class="badge">ADMIN</span>
+                </a>
+            </div>
+            <?php endif; ?>
+        </nav>
+
+        <div class="p-5 border-t border-white/5 space-y-3">
+            <!-- Theme Switcher for Sidebar -->
+            <div class="flex items-center justify-between px-3 py-2 bg-white/5 rounded-2xl mb-2">
+                <span class="text-[9px] font-bold uppercase tracking-widest text-gray-500">Mode</span>
+                <button onclick="Madeline.toggleTheme()" class="w-8 h-8 rounded-full flex items-center justify-center hover:bg-white/10 transition-all text-gray-400">
+                    <svg class="dark:hidden w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    <svg class="hidden dark:block w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M16.243 16.243l.707.707M7.05 7.05l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"></path></svg>
+                </button>
+            </div>
+
+            <a href="/profile" class="flex items-center gap-3 px-3 py-3 hover:bg-white/5 rounded-2xl transition-all group">
+                <div class="w-9 h-9 rounded-full bg-brand-500/20 text-brand-400 flex items-center justify-center font-black text-sm uppercase flex-shrink-0">
+                    {{ strtoupper(substr($_SESSION['user_name'] ?? 'U', 0, 1)) }}
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-[11px] font-black text-white truncate">{{ $_SESSION['user_name'] ?? 'Utilisateur' }}</p>
+                    <p class="text-[8px] font-black text-gray-600 uppercase tracking-widest">
+                        {{ strtoupper($_SESSION['user_role'] ?? 'member') }} · Voir profil
+                    </p>
+                </div>
+                <svg class="w-4 h-4 text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+            </a>
+            <a href="/logout" data-no-madeline="true" class="flex items-center gap-3 px-3 py-3 hover:bg-red-500/10 rounded-2xl transition-all group">
+                <svg class="w-4 h-4 text-gray-600 group-hover:text-red-400 transition-colors flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3 3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                <span class="text-[10px] font-black text-gray-500 group-hover:text-red-400 uppercase tracking-widest transition-colors">Déconnexion</span>
+            </a>
+        </div>
+    </aside>
+
+    <main id="madeline-app" class="pl-64 min-h-screen relative z-10">
+        <div class="px-12 py-16 max-w-[1600px] mx-auto">
+            @biir('content')
+        </div>
+    </main>
+
+@xaaj
+    <!-- =============================== -->
+    <!-- PUBLIC Header (Glassmorphism)   -->
+    <!-- =============================== -->
+    <header class="sticky top-0 z-[100] glass-header">
+        <div class="max-w-[1400px] mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-10">
+                <a href="/" class="flex items-center gap-2 group transition-transform hover:scale-[1.02]">
+                    <div class="w-8 h-8 bg-brand-500 rounded-lg flex items-center justify-center">
+                        <div class="w-2 h-2 bg-white rounded-full"></div>
+                    </div>
+                    <span class="font-serif italic text-2xl tracking-tight text-gray-900 dark:text-white/90 group-hover:text-brand-500 transition-colors">{{ \Core\Config::get('app.name', 'Madeline') }}</span>
+                </a>
+                <nav class="hidden lg:flex items-center gap-2">
+                    <a href="/docs" class="px-5 py-2 text-sm font-medium text-gray-500 dark:text-white/50 hover:text-brand-600 dark:hover:text-white transition-all hover:bg-gray-100 dark:hover:bg-white/[0.03] rounded-full">Guide Framework</a>
+                    <a href="/api/docs/ui" class="px-5 py-2 text-sm font-medium text-gray-500 dark:text-white/50 hover:text-brand-600 dark:hover:text-white transition-all hover:bg-gray-100 dark:hover:bg-white/[0.03] rounded-full">Console API</a>
+                </nav>
+            </div>
+
+            <div class="flex items-center gap-4 lg:gap-6">
+                <!-- Theme Switcher -->
+                <button onclick="Madeline.toggleTheme()" class="theme-toggle-btn" aria-label="Toggle Theme">
+                    <svg class="dark:hidden w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"></path></svg>
+                    <svg class="hidden dark:block w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707M16.243 16.243l.707.707M7.05 7.05l.707-.707M12 8a4 4 0 100 8 4 4 0 000-8z"></path></svg>
+                </button>
+
+                <?php if (file_exists(__DIR__ . '/../Controllers/AuthController.php')): ?>
+                <a href="/login" class="px-6 py-2.5 text-sm font-bold bg-gray-900 dark:bg-white text-white dark:text-black rounded-full hover:bg-gray-800 dark:hover:bg-gray-200 transition-all active:scale-95 shadow-xl shadow-gray-200 dark:shadow-white/5">
+                    Connexion
+                </a>
+                <?php endif; ?>
+            </div>
+        </div>
+    </header>
+
+    <div id="madeline-app" class="relative z-10">
+        @biir('content')
+    </div>
+
+    <!-- Master Footer -->
+    <footer class="border-t border-gray-100 dark:border-white/[0.05] py-24 bg-gray-50 dark:bg-[#050508] transition-colors mt-20">
+        <div class="max-w-[1400px] mx-auto px-6">
+            <div class="grid md:grid-cols-4 gap-16 mb-20 text-center md:text-left">
+                <div class="col-span-2 space-y-8">
+                    <div class="flex items-center justify-center md:justify-start gap-4">
+                        <span class="font-serif italic text-2xl text-gray-900 dark:text-white">{{ \Core\Config::get('app.name', 'Madeline') }}</span>
+                    </div>
+                    <p class="text-gray-500 dark:text-white/40 text-sm max-w-sm mx-auto md:mx-0 leading-relaxed font-light">
+                        L'art du code rencontre l'ingénierie de pointe. Madeline est conçu pour transformer vos idées en expériences numériques d'exception.
+                    </p>
+                </div>
+                <div class="space-y-6">
+                    <h4 class="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-400 dark:text-white/20">Explorer</h4>
+                    <ul class="space-y-3 text-sm text-gray-500 dark:text-white/40 font-medium font-sans">
+                        <li><a href="/docs" class="hover:text-brand-500 dark:hover:text-white transition-colors">Architecture</a></li>
+                        <li><a href="/api/docs/ui" class="hover:text-brand-500 dark:hover:text-white transition-colors">Console API</a></li>
+                    </ul>
+                </div>
+                <div class="space-y-6">
+                    <h4 class="text-[10px] font-bold uppercase tracking-[0.3em] text-gray-400 dark:text-white/20">Origines</h4>
+                    <div class="text-[11px] font-bold text-gray-400 dark:text-white/20 leading-relaxed font-sans">
+                        Conçu avec amour au Sénégal.
+                    </div>
+                </div>
+            </div>
+            
+            <div class="pt-10 border-t border-gray-200 dark:border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 text-[10px] font-bold uppercase tracking-[0.2em] text-gray-400 dark:text-white/20">
+                <p>&copy; {{ date('Y') }} — Un chef-d'œuvre de <span class="text-gray-900 dark:text-white/40 font-serif italic lowercase tracking-normal text-sm">Digital Artist Studio</span></p>
+                <div class="flex gap-10 items-center">
+                    <span class="flex items-center gap-2"><span class="w-1 h-1 rounded-full bg-green-500"></span> Stable v1.0.0</span>
+                    <span class="hover:text-brand-500 dark:hover:text-white transition-colors cursor-pointer">Licence MIT</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+@jeexmiingi
+
+<script src="{{ asset('js/madeline.js') }}"></script>
+<script>
+    // Synchronisation de la navbar avec le routage SPA Madeline.js
+    document.addEventListener('madeline:refresh', function(e) {
+        let currentPath = new URL(e.detail.url || window.location.href).pathname;
+        document.querySelectorAll('.nav-link').forEach(link => {
+            const href = link.getAttribute('href');
+            if (!href) return;
+            
+            if (href === '/dashboard' && currentPath === '/dashboard') {
+                link.classList.add('active');
+            } else if (href !== '/dashboard' && currentPath.startsWith(href)) {
+                link.classList.add('active');
+            } else {
+                link.classList.remove('active');
+            }
+        });
+    });
+</script>
+@biir('extra_head')
+</body>
+</html>
+EOD;
+
+        $rootHtaccessTemplate = <<<'EOD'
+# Madeline Framework - Root Redirector
+# v1.2.6 - Bulletproof Redirection
+DirectoryIndex index.php
+Options -MultiViews -Indexes
+
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Empêcher l'héritage de base du parent si on est dans un sous-dossier
+    RewriteBase /
+    
+    # Si le fichier existe dans public, on le sert directement
+    RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
+    RewriteRule ^(.*)$ public/$1 [L,QSA]
+    
+    # Rediriger tout vers le dossier public/ s'il n'y est pas déjà
+    # On passe explicitement le chemin via ?url= pour aider le noyau sur certains serveurs
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/index.php?url=$1 [L,QSA]
+</IfModule>
+EOD;
+
+        $publicHtaccessTemplate = <<<'EOD'
+# Madeline Public - Core Router
+# v1.2.6 - Deep Path Resilience
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # RewriteBase peut aider sur certains serveurs s'il y a des erreurs 500
+    # RewriteBase /public/
+
+    # Ne rien faire si c'est un fichier ou dossier réel
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    
+    # Envoyer tout vers index.php (url=...)
+    # On capture tout le chemin pour ne rien perdre lors des redirections LWS
+    RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
+</IfModule>
+EOD;
+
+        $appConfigTemplate = <<<'EOD'
+<?php
+namespace App\Config;
+
+class AppConfig {
+    public static function get() {
+        return [
+            'name' => 'Madeline',
+            'description' => 'Madeline Framework - Wolofized Edition',
+            'url' => '', // Laissez vide pour auto-détection
+            'base_path' => '', // Auto-rempli par le noyau
+            'env' => 'local',
+            'debug' => true,
+            'view_cache_lifetime' => 0,
+            'database' => [
+                'host' => 'localhost',
+                'name' => '',
+                'user' => 'root',
+                'pass' => '',
+                'charset' => 'utf8mb4'
+            ],
+            'mail' => [
+                'from_email' => 'noreply@madeline.local',
+                'from_name' => 'Madeline',
+                'host' => '',
+                'port' => '2525',
+                'user' => '',
+                'pass' => '',
+            ],
+            'middlewares' => [
+                \App\Middlewares\SecurityHeadersMiddleware::class,
+                \App\Middlewares\CsrfMiddleware::class,
+            ]
+        ];
+    }
+}
+EOD;
+
+        file_put_contents(__DIR__ . '/App/Views/welcome.madeline.php', $welcomeTemplate);
+        file_put_contents(__DIR__ . '/App/Views/layout.madeline.php', $layoutTemplate);
+        file_put_contents(__DIR__ . '/App/Views/docs/guide.madeline.php', $guideTemplate);
+        file_put_contents(__DIR__ . '/App/Views/docs/api.madeline.php', $apiTemplate);
+        file_put_contents(__DIR__ . '/App/Views/docs/layout.madeline.php', $docsLayoutTemplate);
+        
+        // Host Resilience
+        file_put_contents(__DIR__ . '/.htaccess', $rootHtaccessTemplate);
+        if (!is_dir(__DIR__ . '/public')) mkdir(__DIR__ . '/public', 0777, true);
+        file_put_contents(__DIR__ . '/public/.htaccess', $publicHtaccessTemplate);
+        
+        if (!file_exists(__DIR__ . '/App/Config/AppConfig.php')) {
+            if (!is_dir(__DIR__ . '/App/Config')) mkdir(__DIR__ . '/App/Config', 0777, true);
+            file_put_contents(__DIR__ . '/App/Config/AppConfig.php', $appConfigTemplate);
+        }
+
+        echo "🏛️ Templates 'Art du Madeline' (incluant Docs & Config) restaurés avec succès.\n";
+
+        echo "✨ Madeline est maintenant comme neuve ! Profites-en bien. 🚀\n";
+        break;
+
     case 'doxal':
     case 'serve':
-        $port = $arg ?: 8000;
+        $port = (int)($arg ?: 8000);
+        
+        // Fonction pour vérifier si un port est libre
+        $isPortFree = function($p) {
+            $connection = @fsockopen('localhost', $p);
+            if (is_resource($connection)) {
+                fclose($connection);
+                return false;
+            }
+            return true;
+        };
+
+        $originalPort = $port;
+        while (!$isPortFree($port)) {
+            $port++;
+        }
+
+        if ($port !== $originalPort) {
+            echo "⚠️  Port $originalPort utilisé. Madeline s'est déplacée sur le port $port.\n";
+        }
+
         $host = "localhost:$port";
         echo "✓ Madeline doxal na sa serveur ci http://$host\n";
         echo "💡 Bu la neexé dagg ko ak Ctrl+C.\n";
-        passthru("php -S $host -t " . __DIR__ . "/public/ " . __DIR__ . "/public/index.php");
+        passthru("php -S $host -t \"" . __DIR__ . "/public/\" \"" . __DIR__ . "/public/index.php\"");
         break;
 
     default:
@@ -135,8 +1611,11 @@ function showHelp() {
     echo "  tahl:auth                 Tahl bi pack d'authentification bi\n";
     echo "  far:auth                  Far bi pack d'authentification bi\n";
     echo "  setal:cache               Setal bi mboloo cache yi\n";
+    echo "  setal:reset               REINITIALISATION D'USINE MADELINE 🚨\n";
     echo "  tahl:js [lib]             Tahl bi ab librairie JS (CDN)\n";
     echo "  takoo:storage             Takoo storage ak public folder bi\n";
+    echo "  amal:user [nom] [email] [pass]  Créer un utilisateur manuellement\n";
+    echo "  auth:check                Vérifier l'état de l'authentification\n";
     echo "  doxal [port]              Doxal sa serveur bi (default: 8000)\n";
 }
 

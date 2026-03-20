@@ -1,6 +1,20 @@
+# Madeline Framework - Root Redirector
+# v1.2.6 - Bulletproof Redirection
+DirectoryIndex index.php
+Options -MultiViews -Indexes
+
 <IfModule mod_rewrite.c>
     RewriteEngine On
-    RewriteCond %{REQUEST_FILENAME} !-f
-    RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^(.*)$ public/index.php?url=$1 [QSA,L]
+    
+    # Empêcher l'héritage de base du parent si on est dans un sous-dossier
+    RewriteBase /
+    
+    # Si le fichier existe dans public, on le sert directement
+    RewriteCond %{DOCUMENT_ROOT}/public/$1 -f
+    RewriteRule ^(.*)$ public/$1 [L,QSA]
+    
+    # Rediriger tout vers le dossier public/ s'il n'y est pas déjà
+    # On passe explicitement le chemin via ?url= pour aider le noyau sur certains serveurs
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/index.php?url=$1 [L,QSA]
 </IfModule>
