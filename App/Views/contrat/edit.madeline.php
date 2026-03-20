@@ -5,9 +5,8 @@
 @def('extra_head')
 <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
 <style>
-    .ql-container { border-bottom-left-radius: 2rem !important; border-bottom-right-radius: 2rem !important; border: none !important; font-family: inherit; }
-    .ql-toolbar { border-top-left-radius: 2rem; border-top-right-radius: 2rem; border: none !important; background: #f9fafb; padding: 15px !important; }
-    .ql-editor { min-height: 200px; font-size: 14px; line-height: 1.6; color: #374151; }
+    trix-toolbar { border-radius: 2rem 2rem 0 0; background: #f9fafb; padding: 15px !important; border: none !important; border-bottom: 1px solid #e5e7eb !important; }
+    trix-editor { border-radius: 0 0 2rem 2rem !important; border: none !important; min-height: 200px; font-size: 14px; line-height: 1.6; color: #374151; background: #white; }
     
     #signature-pad { border: 2px dashed #e5e7eb; border-radius: 2rem; cursor: crosshair; background: #fff; width: 100%; height: 200px; touch-action: none; }
     .signature-container { position: relative; }
@@ -154,10 +153,10 @@
                 <div class="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
                     <div class="px-10 py-6 border-b border-gray-50 flex items-center justify-between bg-gray-50/50">
                         <label class="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">Clauses & Notes Particulières</label>
-                        <span class="text-[9px] font-bold text-brand-500 uppercase tracking-widest italic">Éditeur HTML Activé</span>
+                        <span class="text-[9px] font-bold text-brand-500 uppercase tracking-widest italic">Éditeur HTML (Trix)</span>
                     </div>
-                    <div id="editor-container"></div>
-                    <input type="hidden" name="notes" id="notes_field" value="{{ $contrat->notes ?? '' }}">
+                    <input id="notes_field" type="hidden" name="notes" value="{{ $contrat->notes ?? '' }}">
+                    <trix-editor input="notes_field" class="trix-content"></trix-editor>
                 </div>
 
                 <!-- Provider Signature -->
@@ -260,7 +259,9 @@
     </form>
 </div>
 
-<script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+<script src="https://unpkg.com/trix@2.0.8/dist/trix.umd.min.js"></script>
+<link rel="stylesheet" type="text/css" href="https://unpkg.com/trix@2.0.8/dist/trix.css">
+
 <script>
 // ============================================================
 // Madeline Contrat Editor - JS Engine (Clauses)
@@ -320,8 +321,9 @@ function renderLines() {
                     class="w-full bg-transparent border-0 p-0 text-sm font-bold focus:ring-0 text-[#050510] placeholder-gray-300">
                 ${line.article_id ? `<div class="mt-2 inline-block px-2 text-[8px] font-black text-amber-500 bg-amber-50 rounded-md uppercase tracking-widest">Type #${line.article_id}</div>` : ''}
             </td>
-            <td class="py-5 px-3 align-top border-l border-gray-100">
-                <div id="editor-clause-${i}" class="bg-white rounded-xl border border-gray-100 clause-quill"></div>
+            <td class="py-5 px-3 align-top border-l border-gray-100 clause-trix-container" style="min-width:300px;">
+                <input id="trix-input-${i}" type="hidden" value="${escHtml(line.description || '')}">
+                <trix-editor input="trix-input-${i}" class="bg-white rounded-xl border border-gray-100 clause-trix trix-content" style="min-height:100px; border-radius: 1rem !important;"></trix-editor>
             </td>
             <td class="py-5 text-right align-top">
                 <button type="button" onclick="removeLine(${i})"
@@ -332,15 +334,9 @@ function renderLines() {
         `;
         body.appendChild(tr);
 
-        // Initialize Mini-Quill for this clause
-        var lineQuill = new Quill('#editor-clause-' + i, {
-            theme: 'snow',
-            placeholder: 'Contenu de la clause...',
-            modules: { toolbar: [ ['bold', 'italic'], [{'list': 'bullet'}] ] }
-        });
-        lineQuill.root.innerHTML = line.description || '';
-        lineQuill.on('text-change', function() {
-            updateLine(i, 'description', lineQuill.root.innerHTML);
+        // Listen for changes from Trix editor
+        document.getElementById('trix-input-' + i).addEventListener('trix-change', function(e) {
+            updateLine(i, 'description', this.value);
         });
     });
 
@@ -358,28 +354,9 @@ function removeLine(i) {
     renderLines();
 }
 
-// Initialize Quill
-var quill = new Quill('#editor-container', {
-    theme: 'snow',
-    placeholder: 'Rédigez ici les clauses spécifiques au contrat...',
-    modules: {
-        toolbar: [
-            ['bold', 'italic', 'underline'],
-            [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-            ['clean']
-        ]
-    }
-});
-
-// Load existing content
-var existingNotes = document.getElementById('notes_field').value;
-if (existingNotes) {
-    quill.root.innerHTML = existingNotes;
-}
-
-// Sync content on change
-quill.on('text-change', function() {
-    document.getElementById('notes_field').value = quill.root.innerHTML;
+// Trix updates its hidden input automatically, we just bind to the main contract text area
+document.getElementById('notes_field').addEventListener('trix-change', function(e) {
+    // Hidden field is auto-updated by trix, we don't strictly need to do anything here
 });
 
 function updateLine(i, key, val) {
