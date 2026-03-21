@@ -12,7 +12,10 @@ use Packages\Http\Request;
  */
 class ProduitController {
     public function index() {
-        $produits = Produit::fari();
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $eid = $_SESSION['active_entreprise_id'] ?? 'all';
+        $params = $eid !== 'all' ? ['entreprise_id' => $eid] : [];
+        $produits = Produit::fari($params, 'id DESC');
         return MadelineView::render('produit/index', [
             'produits' => $produits
         ]);
@@ -38,6 +41,13 @@ class ProduitController {
     public function bindu() {
         $req = new Request();
         $id = $req->input('id');
+
+        // Validation front-end via server
+        if (empty($req->input('designation')) || empty($req->input('entreprise_id'))) {
+            $_SESSION['error'] = "Veuillez remplir la désignation et l'entité gestionnaire.";
+            header("Location: " . ($id ? "/produits/edit/{$id}" : "/produits/nouveau"));
+            exit;
+        }
         
         $data = [
             'designation' => $req->input('designation'),

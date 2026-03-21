@@ -253,6 +253,3 @@ evoCanvas._chartInstance = new Chart(ctxEvolution, {
 })();
 </script>
 @jeexdef
-t>
-@jeexdef
-@jeexdef

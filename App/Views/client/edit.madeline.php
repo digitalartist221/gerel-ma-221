@@ -58,8 +58,21 @@
                 </div>
             </div>
 
-            <div class="pt-8 border-t border-slate-50">
-                <button type="submit" class="w-full bg-slate-900 text-white rounded-full py-7 text-xs font-black uppercase tracking-widest shadow-2xl shadow-slate-900/10 hover:bg-brand-600 transition-all flex items-center justify-center gap-3">
+            <!-- Section: Entité Gestionnaire -->
+            <div class="space-y-3 pb-8 border-b border-slate-50">
+                <label class="block text-[10px] font-black uppercase tracking-widest text-slate-400 ml-6">Entité Gestionnaire</label>
+                <select name="entreprise_id" required class="w-full bg-slate-50 border border-slate-50 rounded-3xl px-8 py-6 text-sm font-black text-slate-900 focus:bg-white focus:ring-4 focus:ring-brand-500/5 transition-all outline-none appearance-none cursor-pointer">
+                    @baat($entreprises as $ent)
+                        <option value="{{ $ent->id }}" {{ ($client && $client->entreprise_id == $ent->id) || (!$client && ($_SESSION['active_entreprise_id'] ?? 'all') == $ent->id) ? 'selected' : '' }}>{{ $ent->nom }}</option>
+                    @jeexbaat
+                </select>
+            </div>
+
+            <div class="pt-8 border-t border-slate-50 flex flex-col md:flex-row gap-4">
+                <a href="javascript:history.back()" class="w-full md:w-auto px-10 py-7 rounded-full bg-slate-50 text-slate-400 text-xs font-black uppercase tracking-widest hover:bg-slate-100 transition-all text-center">
+                    Annuler
+                </a>
+                <button type="submit" class="w-full flex-1 bg-slate-900 text-white rounded-full py-7 text-xs font-black uppercase tracking-widest shadow-2xl shadow-slate-900/10 hover:bg-brand-600 transition-all flex items-center justify-center gap-3">
                     <span>{{ $client ? 'Enregistrer les modifications' : 'Créer le dossier client' }}</span>
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
                 </button>

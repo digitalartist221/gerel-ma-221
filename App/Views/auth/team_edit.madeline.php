@@ -28,10 +28,10 @@
                 <div class="space-y-3 md:col-span-2">
                     <label class="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-2">Rôle & Permissions</label>
                     <select name="role" required class="w-full bg-gray-50/50 border border-gray-100 rounded-2xl px-8 py-5 text-sm font-bold focus:ring-2 focus:ring-brand-500 appearance-none">
-                        <option value="commercial" {{ ($member && $member->role == 'commercial') ? 'selected' : '' }}>Commercial (Ventes, Documents, Clients)</option>
-                        <option value="gestionnaire" {{ ($member && $member->role == 'gestionnaire') ? 'selected' : '' }}>Gestionnaire (Opérations, Stocks, CRM)</option>
-                        <option value="comptable" {{ ($member && $member->role == 'comptable') ? 'selected' : '' }}>Comptable (Caisse, Fiscalité, Rapports)</option>
-                        <option value="admin" {{ ($member && $member->role == 'admin') ? 'selected' : '' }}>Administrateur (Accès Total)</option>
+                        <option value="commercial" {{ ($member && $member->role == 'commercial') ? 'selected' : '' }}>📊 Commercial — Ventes, Documents, Clients</option>
+                        <option value="comptable"  {{ ($member && $member->role == 'comptable')  ? 'selected' : '' }}>📒 Comptable — Caisse, Fiscalité, Rapports</option>
+                        <option value="admin"      {{ ($member && $member->role == 'admin')      ? 'selected' : '' }}>👑 Administrateur — Accès complet</option>
+                        <option value="member"     {{ ($member && $member->role == 'member')     ? 'selected' : '' }}>👤 Membre — Accès minimal (tableau de bord)</option>
                     </select>
                     <p class="text-[9px] text-gray-400 font-bold uppercase tracking-widest px-2 mt-2">Le rôle définit les modules accessibles pour cet utilisateur.</p>
                 </div>
@@ -45,8 +45,11 @@
                 </div>
             </div>
 
-            <div class="pt-8 flex justify-end">
-                <button type="submit" class="px-12 py-5 rounded-full btn-dark text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-black/10">
+            <div class="pt-8 flex flex-col md:flex-row justify-end gap-3">
+                <a href="javascript:history.back()" class="px-12 py-5 rounded-full bg-slate-50 text-[10px] font-black uppercase tracking-[0.2em] text-slate-400 hover:bg-slate-100 transition-all text-center">
+                    Annuler
+                </a>
+                <button type="submit" class="px-12 py-5 rounded-full btn-dark text-[10px] font-black uppercase tracking-[0.2em] shadow-2xl shadow-black/10 transition-all">
                     {{ $member ? 'Sauvegarder' : 'Créer le compte' }} ↗
                 </button>
             </div>

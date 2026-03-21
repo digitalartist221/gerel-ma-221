@@ -28,11 +28,17 @@
             </div>
 
             <div class="pt-10 border-t border-gray-50">
-                <div class="space-y-3 max-w-md">
-                    <label class="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-2">Nouveau Mot de Passe</label>
-                    <input type="password" name="password" placeholder="Laisser vide pour ne pas changer" class="w-full bg-gray-50/50 border border-gray-100 rounded-2xl px-8 py-5 text-sm font-bold focus:ring-2 focus:ring-brand-500 transition-all">
-                    <p class="text-[9px] text-gray-300 font-bold uppercase tracking-widest px-2">Sécurité : minimum 8 caractères</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-2xl">
+                    <div class="space-y-3">
+                        <label class="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-2">Nouveau Mot de Passe</label>
+                        <input type="password" name="password" id="pw1" placeholder="Laisser vide pour ne pas changer" class="w-full bg-gray-50/50 border border-gray-100 rounded-2xl px-8 py-5 text-sm font-bold focus:ring-2 focus:ring-brand-500 transition-all">
+                    </div>
+                    <div class="space-y-3">
+                        <label class="block text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 ml-2">Confirmer le Mot de Passe</label>
+                        <input type="password" name="password_confirm" id="pw2" placeholder="Répétez le mot de passe" class="w-full bg-gray-50/50 border border-gray-100 rounded-2xl px-8 py-5 text-sm font-bold focus:ring-2 focus:ring-brand-500 transition-all">
+                    </div>
                 </div>
+                <p class="text-[9px] text-gray-300 font-bold uppercase tracking-widest px-2 mt-3">Sécurité : minimum 8 caractères. Laisser vide pour conserver le mot de passe actuel.</p>
             </div>
 
             <div class="pt-8 flex justify-end">

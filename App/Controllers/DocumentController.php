@@ -7,13 +7,17 @@ use App\Models\Entreprise;
 use Packages\View\MadelineView;
 use Packages\Mail\Mail;
 use Packages\Http\Request;
+use Core\Config;
 
 /**
  * Controller: Documents (Factures, BC, BL)
  */
 class DocumentController {
     public function index() {
-        $documents = Document::fari();
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $eid = $_SESSION['active_entreprise_id'] ?? 'all';
+        $params = $eid !== 'all' ? ['entreprise_id' => $eid] : [];
+        $documents = Document::fari($params, 'id DESC');
         return MadelineView::render('document/index', [
             'documents' => $documents
         ]);
@@ -24,8 +28,11 @@ class DocumentController {
         $entreprises = Entreprise::fari();
         $produits = \App\Models\Produit::fari();
         
-        // Auto-select if unique
-        $defaultEnterpriseId = (count($entreprises) === 1) ? $entreprises[0]->id : null;
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        
+        // Auto-select if unique or session active
+        $active_eid = $_SESSION['active_entreprise_id'] ?? 'all';
+        $defaultEnterpriseId = ($active_eid !== 'all') ? $active_eid : ((count($entreprises) === 1) ? $entreprises[0]->id : null);
 
         return MadelineView::render('document/edit', [
             'document' => null,
@@ -52,6 +59,13 @@ class DocumentController {
     public function bindu() {
         $req = new Request();
         $id = $req->input('id');
+
+        // Validation Serveur
+        if (empty($req->input('client_id')) || empty($req->input('entreprise_id')) || empty($req->input('numero'))) {
+            $_SESSION['error'] = "Veuillez remplir tous les champs obligatoires (Client, Entité, Numéro).";
+            header("Location: " . ($id ? "/documents/edit/{$id}" : "/documents/nouveau"));
+            exit;
+        }
 
         // Récupération des lignes structurées (envoyées via JS)
         $lines = json_decode($req->input('lines_json', '[]'), true);
@@ -109,6 +123,9 @@ class DocumentController {
             if ($data['statut'] === 'paye' && ($oldDoc && $oldDoc->statut !== 'paye')) {
                 $this->recordPayment($id);
                 $_SESSION['success'] = "Paiement encaissé ! Trésorerie mise à jour.";
+                
+                $adminEmail = Config::get('app.admin_email', 'admin@maye.com');
+                Mail::to($adminEmail, "PAIEMENT REÇU : {$data['numero']}", "Un paiement de " . number_format($data['total_ttc'], 0) . " XOF a été encaissé pour le document {$data['numero']}.");
             } elseif ($data['statut'] === 'valide' && ($oldDoc && !in_array($oldDoc->statut, ['valide', 'paye', 'signe']))) {
                 $_SESSION['success'] = "Document validé ! Stock mis à jour.";
             } else {
@@ -125,7 +142,12 @@ class DocumentController {
             if ($data['statut'] === 'valide' || $data['statut'] === 'signe') {
                 $this->handleStockReduction($lines, $newId);
                 $this->sendEmail($newId, true);
-                if ($data['statut'] === 'paye') $this->recordPayment($newId);
+                if ($data['statut'] === 'paye') {
+                    $this->recordPayment($newId);
+                    
+                    $adminEmail = Config::get('app.admin_email', 'admin@maye.com');
+                    Mail::to($adminEmail, "PAIEMENT DIRECT REÇU : {$data['numero']}", "Un paiement immédiat de " . number_format($data['total_ttc'], 0) . " XOF a été enregistré pour le document {$data['numero']}.");
+                }
             }
         }
 
@@ -188,6 +210,11 @@ class DocumentController {
                     'signed_by' => $name,
                     'signature_hash' => hash('sha256', $token . $name . time())
                 ], ['id' => $doc->id]);
+
+                // Notification Admin
+                $adminEmail = Config::get('app.admin_email', 'admin@maye.com');
+                $body = "<h2>Devis Validé</h2><br>Le document <b>{$doc->numero}</b> a été signé en ligne par {$name}.";
+                Mail::to($adminEmail, "DOCUMENT SIGNÉ : {$doc->numero}", $body);
             }
         } else {
             Document::weccit(['statut' => 'refuse'], ['token_public' => $token]);
@@ -249,7 +276,7 @@ class DocumentController {
         $entreprise = Entreprise::fari(['id' => $doc->entreprise_id])[0] ?? null;
         $fromName = $entreprise ? $entreprise->nom : "Gerel Ma Business";
 
-        $url = "http://localhost:8000/view/" . strtolower($doc->type) . "/" . $doc->token_public;
+        $url = rtrim(Config::get('app.url', 'http://localhost:8000'), '/') . "/view/" . strtolower($doc->type) . "/" . $doc->token_public;
         
         $body = "Bonjour {$client->nom},<br><br>Vous avez reçu un nouveau document de la part de <b>{$fromName}</b> : <b>{$doc->type} N° {$doc->numero}</b>.<br>";
         $body .= "D'un montant de " . number_format($doc->total_ttc, 0) . " XOF.<br><br>";

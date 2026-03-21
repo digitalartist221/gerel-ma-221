@@ -53,15 +53,21 @@
     <!-- Journal Table -->
     <div class="p-12 rounded-[3rem] bg-white border border-slate-100 shadow-sm overflow-hidden">
         <div class="flex items-center justify-between mb-10">
-            <h2 class="text-xl font-black text-slate-900 tracking-tight">Journal des Opérations</h2>
-            <div class="flex items-center gap-3">
-                <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Temps réel</span>
-                <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+            <div>
+                <h2 class="text-xl font-black text-slate-900 tracking-tight">Journal des Opérations</h2>
+                <div class="flex items-center gap-3 mt-1">
+                    <span class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Temps réel</span>
+                    <span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span>
+                </div>
+            </div>
+            <div class="relative w-full max-w-xs">
+                <input type="text" id="searchInput" onkeyup="filterTable('caisseTable')" placeholder="Rechercher..." class="w-full bg-slate-50 border border-slate-100 rounded-full px-6 py-3 text-sm font-bold focus:ring-2 focus:ring-brand-500 outline-none transition-all pl-12">
+                <svg class="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
             </div>
         </div>
         
         <div class="overflow-x-auto">
-            <table class="w-full text-left">
+            <table class="w-full text-left" id="caisseTable">
                 <thead>
                     <tr class="border-b border-slate-50">
                         <th class="pb-8 text-[11px] font-black uppercase tracking-widest text-slate-300">Horodatage</th>
@@ -95,7 +101,9 @@
                             @jeexndax
                         </td>
                         <td class="py-8 text-right">
-                            <a href="/caisse/delete/{{ $m->id }}" class="p-3 rounded-xl bg-slate-50 text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100">
+                            <a href="/caisse/delete/{{ $m->id }}" 
+                               onclick="return confirm('Supprimer ce mouvement de caisse ? Cette action est irréversible.')"
+                               class="p-3 rounded-xl bg-slate-50 text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all">
                                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
                             </a>
                         </td>

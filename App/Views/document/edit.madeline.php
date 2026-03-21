@@ -176,10 +176,15 @@
                     </div>
 
                     <div class="space-y-4">
-                        <button type="submit" class="w-full bg-brand-600 text-white rounded-full py-6 text-[10px] font-black uppercase tracking-widest hover:bg-brand-500 transition-all shadow-xl shadow-brand-500/10 flex items-center justify-center gap-3">
-                            <span>{{ $document ? 'Mettre à jour' : 'Créer le Document' }}</span>
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
-                        </button>
+                        <div class="flex flex-col xl:flex-row gap-4">
+                            <a href="javascript:history.back()" class="w-full xl:w-auto px-8 py-6 rounded-full bg-white/5 border border-white/10 text-white text-[10px] font-black uppercase tracking-widest hover:bg-white/10 transition-all text-center flex items-center justify-center">
+                                Annuler
+                            </a>
+                            <button type="submit" class="w-full flex-1 bg-brand-600 text-white rounded-full py-6 text-[10px] font-black uppercase tracking-widest hover:bg-brand-500 transition-all shadow-xl shadow-brand-500/10 flex items-center justify-center gap-3">
+                                <span>{{ $document ? 'Mettre à jour' : 'Créer le Document' }}</span>
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M17 8l4 4m0 0l-4 4m4-4H3"/></svg>
+                            </button>
+                        </div>
                         
                         @ndax($document && ($document->statut === 'brouillon' || $document->statut === 'envoye'))
                             <button type="button" onclick="setStatus('valide')" class="w-full h-16 rounded-2xl bg-white/5 border border-white/10 text-white text-[9px] font-black uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-2">

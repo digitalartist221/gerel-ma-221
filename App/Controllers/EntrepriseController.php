@@ -33,6 +33,13 @@ class EntrepriseController {
         $req = new Request();
         $id = $req->input('id');
 
+        // Validation Serveur
+        if (empty($req->input('nom'))) {
+            $_SESSION['error'] = "Le nom de la structure est obligatoire.";
+            header("Location: " . ($id ? "/entreprises/edit/{$id}" : "/entreprises/nouveau"));
+            exit;
+        }
+
         $data = [
             'nom' => $req->input('nom'),
             'siret' => $req->input('siret'),
@@ -55,6 +62,18 @@ class EntrepriseController {
         }
 
         header("Location: /entreprises");
+        exit;
+    }
+
+    public function switchContext($id) {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+        
+        $_SESSION['active_entreprise_id'] = $id;
+        
+        $referer = $_SERVER['HTTP_REFERER'] ?? '/dashboard';
+        header("Location: " . $referer);
         exit;
     }
 }

@@ -88,7 +88,7 @@
                             <select name="entreprise_id" required class="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold focus:ring-2 focus:ring-brand-500 appearance-none">
                                 <option value="">Sélectionner une entité...</option>
                                 @baat($entreprises as $ent)
-                                    <option value="{{ $ent->id }}" {{ ($contrat && $contrat->entreprise_id == $ent->id) ? 'selected' : '' }}>{{ $ent->nom }}</option>
+                                    <option value="{{ $ent->id }}" {{ ($contrat && $contrat->entreprise_id == $ent->id) || (!$contrat && ($_SESSION['active_entreprise_id'] ?? 'all') == $ent->id) ? 'selected' : '' }}>{{ $ent->nom }}</option>
                                 @jeexbaat
                             </select>
                         </div>
@@ -221,10 +221,15 @@
                     </div>
 
                     <div class="space-y-3 pt-4">
-                        <button type="submit" class="w-full bg-[#050510] text-white rounded-full py-5 text-[11px] font-black uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg inline-flex items-center justify-center gap-2">
-                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
-                             {{ $contrat ? 'Mettre à jour' : 'Créer le contrat' }}
-                        </button>
+                        <div class="flex flex-col xl:flex-row gap-3">
+                            <a href="javascript:history.back()" class="w-full xl:w-auto px-8 py-5 rounded-full bg-gray-50 text-gray-400 text-[11px] font-black uppercase tracking-widest hover:bg-gray-100 transition-all text-center flex items-center justify-center">
+                                Annuler
+                            </a>
+                            <button type="submit" class="w-full flex-1 bg-[#050510] text-white rounded-full py-5 text-[11px] font-black uppercase tracking-widest hover:bg-gray-800 transition-all shadow-lg inline-flex items-center justify-center gap-2">
+                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/></svg>
+                                 {{ $contrat ? 'Mettre à jour' : 'Créer le contrat' }}
+                            </button>
+                        </div>
                         @ndax($contrat && $contrat->statut === 'brouillon')
                             <button type="button" onclick="setStatus('valide')" class="w-full bg-white border-2 border-[#050510] text-[#050510] rounded-2xl py-4 text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all inline-flex items-center justify-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>

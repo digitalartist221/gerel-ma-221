@@ -11,7 +11,11 @@ use Packages\Http\Request;
  */
 class CaisseController {
     public function index() {
-        $mouvements = Mouvement::fari([], "ORDER BY date_mouvement DESC, id DESC");
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $eid = $_SESSION['active_entreprise_id'] ?? 'all';
+        $params = $eid !== 'all' ? ['entreprise_id' => $eid] : [];
+        
+        $mouvements = Mouvement::fari($params, "ORDER BY date_mouvement DESC, id DESC");
         
         // Calcul des totaux
         $totalEntrees = 0;
@@ -41,6 +45,13 @@ class CaisseController {
         $req = new Request();
         $id = $req->input('id');
 
+        // Validation front-end via server
+        if (empty($req->input('libelle')) || empty($req->input('montant')) || empty($req->input('entreprise_id'))) {
+            $_SESSION['error'] = "Veuillez remplir le libellé, le montant et l'entité gestionnaire.";
+            header("Location: " . ($id ? "/caisse/edit/{$id}" : "/caisse/nouveau"));
+            exit;
+        }
+
         $data = [
             'type' => $req->input('type', 'sortie'),
             'libelle' => $req->input('libelle'),
@@ -66,7 +77,11 @@ class CaisseController {
     }
 
     public function report() {
-        $mouvements = Mouvement::fari();
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $eid = $_SESSION['active_entreprise_id'] ?? 'all';
+        $params = $eid !== 'all' ? ['entreprise_id' => $eid] : [];
+        
+        $mouvements = Mouvement::fari($params);
         
         $stats = [
             'tva_collectee' => 0,

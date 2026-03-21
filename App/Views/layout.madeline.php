@@ -149,14 +149,34 @@
     <aside class="glass-sidebar flex flex-col overflow-hidden">
 
         <!-- Header / Logo -->
-        <div class="px-8 py-10 flex items-center gap-4">
-            <div class="w-11 h-11 flex items-center justify-center">
-                <div class="w-3 h-3 bg-brand-500 rounded-full animate-pulse"></div>
+        <div class="px-8 py-10 flex flex-col gap-6">
+            <div class="flex items-center gap-4">
+                <div class="w-11 h-11 flex items-center justify-center">
+                    <div class="w-3 h-3 bg-brand-500 rounded-full animate-pulse"></div>
+                </div>
+                <div>
+                    <span class="text-xl font-black tracking-tighter text-slate-900">Gerel Ma<span class="text-brand-500">.</span></span>
+                    <p class="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">Business Suite v1</p>
+                </div>
             </div>
-            <div>
-                <span class="text-xl font-black tracking-tighter text-slate-900">Gerel Ma<span class="text-brand-500">.</span></span>
-                <p class="text-[8px] font-black text-slate-400 uppercase tracking-[0.3em]">Business Suite v1</p>
+
+            <!-- Global Context Switcher -->
+            <?php
+            $allContextEntreprises = \App\Models\Entreprise::fari();
+            $activeEntrepriseId = $_SESSION['active_entreprise_id'] ?? 'all';
+            if (count($allContextEntreprises) > 0) :
+            ?>
+            <div class="px-2">
+                <select onchange="window.location.href='/switch-entreprise/' + this.value" class="w-full bg-slate-50/50 border border-slate-200 text-slate-700 text-[10px] font-black uppercase tracking-widest rounded-2xl py-3 px-4 focus:ring-2 focus:ring-brand-500 outline-none appearance-none cursor-pointer hover:bg-slate-100 transition-colors">
+                    <option value="all" <?= $activeEntrepriseId === 'all' ? 'selected' : '' ?>>Toutes les sociétés</option>
+                    <?php foreach($allContextEntreprises as $ent): ?>
+                        <option value="<?= $ent->id ?>" <?= $activeEntrepriseId == $ent->id ? 'selected' : '' ?>>
+                            <?= substr($ent->nom, 0, 20) . (strlen($ent->nom) > 20 ? '...' : '') ?>
+                        </option>
+                    <?php endforeach; ?>
+                </select>
             </div>
+            <?php endif; ?>
         </div>
 
         <!-- Scrollable Nav -->
@@ -354,6 +374,23 @@
             }
         });
     });
+
+    // Fonction de recherche rapide pour les tables
+    function filterTable(tableId) {
+        let input = document.getElementById("searchInput");
+        let filter = input.value.toLowerCase();
+        let table = document.getElementById(tableId);
+        if (!table) return;
+        let tr = table.getElementsByTagName("tr");
+        for (let i = 1; i < tr.length; i++) {
+            let textContent = tr[i].textContent || tr[i].innerText;
+            if (textContent.toLowerCase().indexOf(filter) > -1) {
+                tr[i].style.display = "";
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+    }
 </script>
 @biir('extra_head')
 </body>

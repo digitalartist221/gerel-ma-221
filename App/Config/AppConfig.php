@@ -24,15 +24,15 @@ class AppConfig {
             |--------------------------------------------------------------------------
             | Valeurs: 'local', 'production'
             */
-            'env' => 'local',
-            'debug' => true,
+            'env' => 'production',
+            'debug' => false,
 
             /*
             |--------------------------------------------------------------------------
             | URL de base
             |--------------------------------------------------------------------------
             */
-            'url' => 'http://localhost:8000',
+            'url' => (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . ($_SERVER['HTTP_HOST'] ?? 'localhost'),
 
             /*
             |--------------------------------------------------------------------------
@@ -68,6 +68,23 @@ class AppConfig {
             'middlewares' => [
                 \App\Middlewares\SecurityHeadersMiddleware::class,
                 \App\Middlewares\CsrfMiddleware::class,
+            ],
+
+            /*
+            |--------------------------------------------------------------------------
+            | Configuration Mail (SMTP)
+            |--------------------------------------------------------------------------
+            | Configurez votre serveur SMTP ici pour l'envoi d'e-mails en production.
+            | Laissez host vide pour utiliser mail() natif (hébergement mutualisé).
+            */
+            'mail' => [
+                'from_email' => 'noreply@gerelma.com',
+                'from_name'  => 'Gerel Ma Business',
+                'host'       => '',   // ex: smtp.gmail.com ou smtp.mailgun.org
+                'port'       => 587,
+                'username'   => '',
+                'password'   => '',
+                'encryption' => 'tls',
             ]
         ];
     }

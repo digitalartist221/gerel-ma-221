@@ -3,6 +3,8 @@ namespace App\Controllers;
 
 use Packages\View\MadelineView;
 use App\Models\User;
+use Packages\Mail\Mail;
+use Core\Config;
 
 /**
  * Controller: Authentification
@@ -34,7 +36,7 @@ class AuthController {
             session_regenerate_id(true);
             $_SESSION['user_id']   = $users[0]->id;
             $_SESSION['user_name'] = $users[0]->name;
-            $_SESSION['user_role'] = $users[0]->role ?? 'admin';
+            $_SESSION['user_role'] = $users[0]->role ?? 'member'; // Fallback sécurisé : member, pas admin
             header('Location: /dashboard');
             exit;
         }
@@ -46,13 +48,25 @@ class AuthController {
     }
 
     public function registerPOST() {
+        $name     = trim($_POST['name'] ?? '');
+        $email    = trim($_POST['email'] ?? '');
+        $password = $_POST['password'] ?? '';
+
+        if (empty($name) || empty($email) || empty($password)) {
+            return MadelineView::render('auth/register', ['error' => 'Tous les champs sont obligatoires.']);
+        }
+
+        // Vérifier si c'est le tout premier utilisateur : il devient admin, sinon member
+        $existing = User::fari();
+        $role = empty($existing) ? 'admin' : 'member';
+
         $user = new User();
-        $user->name     = trim($_POST['name'] ?? '');
-        $user->email    = trim($_POST['email'] ?? '');
-        $user->password = password_hash($_POST['password'] ?? '', PASSWORD_DEFAULT);
-        $user->role     = 'admin';
+        $user->name     = $name;
+        $user->email    = $email;
+        $user->password = password_hash($password, PASSWORD_DEFAULT);
+        $user->role     = $role;
         $user->bindu();
-        header('Location: /login');
+        header('Location: /login?registered=1');
         exit;
     }
 
@@ -104,7 +118,75 @@ class AuthController {
     }
 
     public function forgotPasswordPOST() {
-        return MadelineView::render('auth/forgot_password', ['success' => 'Si cet email existe, un lien de réinitialisation a été envoyé.']);
+        $email = trim($_POST['email'] ?? '');
+        if (empty($email)) {
+            return MadelineView::render('auth/forgot_password', ['error' => 'Veuillez saisir votre adresse email.']);
+        }
+
+        $users = User::fari(['email' => $email]);
+        // Pour la sécurité, on montre toujours le même message (pas d'information sur l'existence du compte)
+        if (!empty($users)) {
+            $user = $users[0];
+            $token = bin2hex(random_bytes(32));
+            $expires = date('Y-m-d H:i:s', strtotime('+1 hour'));
+
+            User::weccit([
+                'reset_token'            => $token,
+                'reset_token_expires_at' => $expires
+            ], ['id' => $user->id]);
+
+            $baseUrl = rtrim(Config::get('app.url', 'http://localhost:8000'), '/');
+            $resetUrl = $baseUrl . '/reset-password/' . $token;
+
+            $body  = "Bonjour {$user->name},<br><br>";
+            $body .= "Vous avez demandé la réinitialisation de votre mot de passe.<br>";
+            $body .= "Ce lien est valable <b>1 heure</b>.<br><br>";
+            $body .= "<a href='{$resetUrl}' style='background:#050510; color:white; padding:15px 30px; text-decoration:none; border-radius:50px; font-weight:bold; display:inline-block;'>Réinitialiser mon mot de passe</a>";
+            $body .= "<br><br><small>Si vous n'avez pas demandé cette action, ignorez cet email.</small>";
+
+            Mail::to($user->email, '[Maye] Réinitialisation de votre mot de passe', $body);
+        }
+
+        return MadelineView::render('auth/forgot_password', ['success' => 'Si cet email existe, un lien de réinitialisation vous a été envoyé.']);
+    }
+
+    public function resetPassword($token) {
+        $users = User::fari(['reset_token' => $token]);
+        $user  = $users[0] ?? null;
+
+        if (!$user || empty($user->reset_token_expires_at) || strtotime($user->reset_token_expires_at) < time()) {
+            return MadelineView::render('auth/forgot_password', ['error' => 'Ce lien de réinitialisation est invalide ou a expiré.']);
+        }
+
+        return MadelineView::render('auth/reset_password', ['token' => $token]);
+    }
+
+    public function resetPasswordPOST($token) {
+        $password = $_POST['password'] ?? '';
+        $confirm  = $_POST['password_confirm'] ?? '';
+
+        if (strlen($password) < 8) {
+            return MadelineView::render('auth/reset_password', ['token' => $token, 'error' => 'Le mot de passe doit faire au moins 8 caractères.']);
+        }
+        if ($password !== $confirm) {
+            return MadelineView::render('auth/reset_password', ['token' => $token, 'error' => 'Les mots de passe ne correspondent pas.']);
+        }
+
+        $users = User::fari(['reset_token' => $token]);
+        $user  = $users[0] ?? null;
+
+        if (!$user || empty($user->reset_token_expires_at) || strtotime($user->reset_token_expires_at) < time()) {
+            return MadelineView::render('auth/forgot_password', ['error' => 'Ce lien de réinitialisation est invalide ou a expiré.']);
+        }
+
+        User::weccit([
+            'password'               => password_hash($password, PASSWORD_DEFAULT),
+            'reset_token'            => null,
+            'reset_token_expires_at' => null
+        ], ['id' => $user->id]);
+
+        header('Location: /login?reset=1');
+        exit;
     }
 
     public function teamList() {

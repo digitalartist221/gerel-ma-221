@@ -1,9 +1,9 @@
-﻿<?php
+<?php
 use Core\Router;
 
 use Packages\View\MadelineView;
 
-// Routes par dÃ©faut - Bienvenue
+// Routes par défaut - Bienvenue
 Router::get('/', function() {
     return MadelineView::render('welcome');
 });
@@ -14,13 +14,12 @@ Router::get('/users/{id}', ['App\Controllers\UserController', 'show']);
 
 // --- MADELINE BUSINESS SUITE ---
 
-// Management MVC
-// Les routes dashboard sont gÃ©rÃ©es par le scaffold en bas avec middleware
-// Management MVC (ProtÃ©gÃ©)
+// Management MVC (Protégé)
 Router::get('/entreprises', ['App\Controllers\EntrepriseController', 'index'], ['\App\Middlewares\AuthMiddleware:admin']);
 Router::get('/entreprises/nouveau', ['App\Controllers\EntrepriseController', 'amul'], ['\App\Middlewares\AuthMiddleware:admin']);
 Router::get('/entreprises/edit/{id}', ['App\Controllers\EntrepriseController', 'edit'], ['\App\Middlewares\AuthMiddleware:admin']);
 Router::post('/entreprises/save', ['App\Controllers\EntrepriseController', 'bindu'], ['\App\Middlewares\AuthMiddleware:admin']);
+Router::get('/switch-entreprise/{id}', ['App\Controllers\EntrepriseController', 'switchContext'], ['\App\Middlewares\AuthMiddleware']);
 
 Router::get('/produits', ['App\Controllers\ProduitController', 'index'], ['\App\Middlewares\AuthMiddleware:commercial']);
 Router::get('/produits/nouveau', ['App\Controllers\ProduitController', 'amul'], ['\App\Middlewares\AuthMiddleware:commercial']);
@@ -33,7 +32,7 @@ Router::get('/clients/edit/{id}', ['App\Controllers\ClientController', 'edit'], 
 Router::get('/clients/view/{id}', ['App\Controllers\ClientController', 'view'], ['\App\Middlewares\AuthMiddleware:commercial']);
 Router::post('/clients/save', ['App\Controllers\ClientController', 'bindu'], ['\App\Middlewares\AuthMiddleware:commercial']);
 
-// Documents & Contrats (ProtÃ©gÃ©s)
+// Documents & Contrats (Protégés)
 Router::get('/documents', ['App\Controllers\DocumentController', 'index'], ['\App\Middlewares\AuthMiddleware:commercial']);
 Router::get('/documents/nouveau', ['App\Controllers\DocumentController', 'amul'], ['\App\Middlewares\AuthMiddleware:commercial']);
 Router::get('/documents/edit/{id}', ['App\Controllers\DocumentController', 'edit'], ['\App\Middlewares\AuthMiddleware:commercial']);
@@ -49,7 +48,7 @@ Router::post('/contrats/save', ['App\Controllers\ContratController', 'bindu'], [
 Router::get('/contrats/send/{id}', ['App\Controllers\ContratController', 'sendEmail'], ['\App\Middlewares\AuthMiddleware:commercial']);
 Router::get('/contrats/print/{id}', ['App\Controllers\ContratController', 'print'], ['\App\Middlewares\AuthMiddleware:commercial']);
 
-// Journal de Caisse & FiscalitÃ© (ProtÃ©gÃ©s : Admin ou Comptable)
+// Journal de Caisse & Fiscalité (Protégés : Admin ou Comptable)
 Router::get('/caisse', ['App\Controllers\CaisseController', 'index'], ['\App\Middlewares\AuthMiddleware:comptable']);
 Router::get('/caisse/nouveau', ['App\Controllers\CaisseController', 'amul'], ['\App\Middlewares\AuthMiddleware:comptable']);
 Router::get('/caisse/edit/{id}', ['App\Controllers\CaisseController', 'edit'], ['\App\Middlewares\AuthMiddleware:comptable']);
@@ -62,7 +61,7 @@ Router::get('/equipe/nouveau', ['App\Controllers\AuthController', 'teamAdd'], ['
 Router::get('/equipe/edit/{id}', ['App\Controllers\AuthController', 'teamEdit'], ['\App\Middlewares\AuthMiddleware:admin']);
 Router::post('/equipe/save', ['App\Controllers\AuthController', 'teamSave'], ['\App\Middlewares\AuthMiddleware:admin']);
 
-// Super-Admin & Waitlist (Module 5)
+// Super-Admin & Waitlist
 Router::get('/admin/waitlist', ['App\Controllers\AdminController', 'waitlist'], ['\App\Middlewares\AuthMiddleware:admin']);
 Router::get('/admin/liste-utilisateurs', ['App\Controllers\AdminController', 'users'], ['\App\Middlewares\AuthMiddleware:admin']);
 Router::post('/api/waitlist/join', ['App\Controllers\AdminController', 'joinWaitlist']); // Public
@@ -80,20 +79,24 @@ Router::get('/payment/success', ['App\Controllers\PaytechController', 'success']
 Router::get('/payment/cancel', ['App\Controllers\PaytechController', 'cancel']);
 
 
-// ==== ROUTES: SCATTERED AUTH SCAFFOLD ==== //
+// ==== ROUTES: AUTH SCAFFOLD ==== //
 Router::get('/login', ['\App\Controllers\AuthController', 'login']);
 Router::post('/login', ['\App\Controllers\AuthController', 'loginPOST']);
 Router::get('/register', ['\App\Controllers\AuthController', 'register']);
 Router::post('/register', ['\App\Controllers\AuthController', 'registerPOST']);
 Router::get('/logout', ['\App\Controllers\AuthController', 'logout']);
 
-// Profil & SÃ©curitÃ©
+// Profil & Sécurité
 Router::get('/profile', ['\App\Controllers\AuthController', 'profile'], ['\App\Middlewares\AuthMiddleware']);
 Router::post('/profile/update', ['\App\Controllers\AuthController', 'updateProfile'], ['\App\Middlewares\AuthMiddleware']);
+
+// Mot de passe oublié & Réinitialisation
 Router::get('/forgot-password', ['\App\Controllers\AuthController', 'forgotPassword']);
 Router::post('/forgot-password', ['\App\Controllers\AuthController', 'forgotPasswordPOST']);
+Router::get('/reset-password/{token}', ['\App\Controllers\AuthController', 'resetPassword']);
+Router::post('/reset-password/{token}', ['\App\Controllers\AuthController', 'resetPasswordPOST']);
 
-// Route SÃ©curisÃ©e par l'AuthMiddleware
+// Dashboard (Sécurisé)
 Router::get('/dashboard', ['\App\Controllers\DashboardController', 'index'], ['\App\Middlewares\AuthMiddleware']);
 Router::get('/dashboard/fiscalite', ['\App\Controllers\DashboardController', 'fiscalite'], ['\App\Middlewares\AuthMiddleware']);
-// ========================================= //
+// =============================== //

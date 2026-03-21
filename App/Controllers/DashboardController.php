@@ -36,7 +36,7 @@ class DashboardController {
             $endDate = $_GET['end'] ?? $endDate;
         }
 
-        $entrepriseId = $_GET['entreprise_id'] ?? 'all';
+        $entrepriseId = $_SESSION['active_entreprise_id'] ?? 'all';
         $db = Mouvement::getConnection();
 
         // 2. Fetch filtré des Mouvements de Caisse
@@ -74,7 +74,7 @@ class DashboardController {
             if ($m->type === 'entree') {
                 $revenus += ($m->montant - $m->tva_portion);
                 $tva_a_reverser += $m->tva_portion;
-                $brs_collecte += $m->brs_portion;
+                $brs_collecte += $m->brs_amount ?? 0; // Correction: brs_amount (et non brs_portion)
             } else {
                 $depenses += $m->montant;
             }
@@ -91,8 +91,16 @@ class DashboardController {
         $bilan = $revenus - $depenses;
 
         // Stats Globales
-        $countClients = count($clients);
-        $countProducts = count(Produit::fari());
+        $countClients  = count($clients);
+        $allProducts   = Produit::fari();
+
+        // Si un filtre entreprise est actif, filtrer les stats clients et produits
+        if ($entrepriseId !== 'all') {
+            $clientsFiltered = array_filter($clients, fn($c) => ($c->entreprise_id ?? null) == $entrepriseId);
+            $countClients    = count($clientsFiltered);
+            $allProducts     = array_filter($allProducts, fn($p) => ($p->entreprise_id ?? null) == $entrepriseId);
+        }
+        $countProducts = count($allProducts);
         
         // Données Graphe (Répartition par Catégorie)
         $categories = [];

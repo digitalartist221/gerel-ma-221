@@ -8,13 +8,17 @@ use App\Models\Produit;
 use Packages\View\MadelineView;
 use Packages\Mail\Mail;
 use Packages\Http\Request;
+use Core\Config;
 
 /**
  * Controller: Contrats (Articles & Prestations)
  */
 class ContratController {
     public function index() {
-        $contrats = Contrat::fari();
+        if (session_status() === PHP_SESSION_NONE) session_start();
+        $eid = $_SESSION['active_entreprise_id'] ?? 'all';
+        $params = $eid !== 'all' ? ['entreprise_id' => $eid] : [];
+        $contrats = Contrat::fari($params, 'id DESC');
         return MadelineView::render('contrat/index', [
             'contrats' => $contrats
         ]);
@@ -50,6 +54,13 @@ class ContratController {
         $id = $req->input('id');
 
         $lines = json_decode($req->input('lines_json', '[]'), true);
+
+        // Validation Serveur
+        if (empty($req->input('client_id')) || empty($req->input('entreprise_id')) || empty($req->input('numero'))) {
+            $_SESSION['error'] = "Veuillez remplir tous les champs obligatoires (Client, Entité, Numéro).";
+            header("Location: " . ($id ? "/contrats/edit/{$id}" : "/contrats/nouveau"));
+            exit;
+        }
         
         $data = [
             'numero' => $req->input('numero', 'CTR-' . time()),
@@ -134,6 +145,11 @@ class ContratController {
                 'signed_client_at' => date('Y-m-d H:i:s'),
                 'signature_client_hash' => $req->input('signature_client_base64', '')
             ], ['id' => $contrat->id]);
+
+            // Notification Admin
+            $adminEmail = Config::get('app.admin_email', 'admin@maye.com');
+            $body = "<h2>Validation Externe</h2><br>Le contrat <b>{$contrat->numero}</b> a été signé en ligne par {$name}.<br>Montant total : {$contrat->total_ttc} XOF.";
+            Mail::to($adminEmail, "CONTRAT SIGNÉ : {$contrat->numero}", $body);
         } elseif ($action === 'refuse') {
             Contrat::weccit(['statut' => 'annule'], ['id' => $contrat->id]);
         }
@@ -150,7 +166,7 @@ class ContratController {
         $client = Client::fari(['id' => $contrat->client_id])[0] ?? null;
         if (!$client || !$client->email) return "Email du client introuvable.";
 
-        $url = "http://localhost:8000/view/contrat/" . $contrat->token_public;
+        $url = rtrim(Config::get('app.url', 'http://localhost:8000'), '/') . "/view/contrat/" . $contrat->token_public;
         
         $body = "Bonjour {$client->nom},<br><br>Vous avez reçu un nouveau contrat à signer : <b>{$contrat->numero}</b>.<br>";
         $body .= "D'un montant de " . number_format($contrat->total_ttc, 0) . " XOF.<br><br>";
