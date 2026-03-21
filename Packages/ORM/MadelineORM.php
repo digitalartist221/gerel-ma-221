@@ -114,7 +114,7 @@ abstract class MadelineORM {
      * _fari : Récupérer/Chercher. (SELECT)
      * @param array $conditions (ex: ['id' => 1])
      */
-    protected function _fari($conditions = []) {
+    protected function _fari($conditions = [], $orderBy = null) {
         $safeTable = $this->sanitizeName($this->table);
         $sql = "SELECT `{$safeTable}`.*";
         
@@ -134,7 +134,7 @@ abstract class MadelineORM {
                 $sql .= " LEFT JOIN `{$safeJoin}` ON {$join['on']}";
             }
         }
-
+ 
         if (!empty($conditions)) {
             $clauses = [];
             foreach ($conditions as $key => $val) {
@@ -144,6 +144,14 @@ abstract class MadelineORM {
             $sql .= " WHERE " . implode(' AND ', $clauses);
         }
 
+        if ($orderBy) {
+             // Basic validation for orderBy to prevent raw injection
+             // We allow only letters, numbers, spaces, dots, and common keywords like DESC/ASC
+             if (preg_match('/^[a-zA-Z0-9_\. ,]+$/', $orderBy)) {
+                 $sql .= " ORDER BY " . $orderBy;
+             }
+        }
+ 
         $stmt = self::$db->prepare($sql);
         $stmt->execute($conditions);
         
