@@ -109,7 +109,8 @@ class AuthController {
         }
         User::weccit($data, ['id' => $_SESSION['user_id']]);
         $_SESSION['user_name'] = $data['name'];
-        header('Location: /profile?updated=1');
+        $_SESSION['success'] = "Votre profil a été mis à jour avec succès.";
+        header('Location: /profile');
         exit;
     }
 
@@ -207,6 +208,12 @@ class AuthController {
     public function teamSave() {
         if (session_status() === PHP_SESSION_NONE) session_start();
         
+        if (empty($_POST['name']) || empty($_POST['email'])) {
+            $_SESSION['error'] = "Le nom et l'email sont obligatoires pour un collaborateur.";
+            header('Location: /equipe');
+            exit;
+        }
+
         $data = [
             'name' => $_POST['name'] ?? '',
             'email' => $_POST['email'] ?? '',

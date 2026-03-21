@@ -70,6 +70,13 @@ class CaisseController {
         } else {
             Mouvement::bindu($data);
             $_SESSION['success'] = "Nouveau mouvement enregistré en Caisse !";
+
+            // Alerte de sécurité : Sortie importante
+            if ($data['type'] === 'sortie' && $data['montant'] >= 1000000) {
+                $adminEmail = \Core\Config::get('app.admin_email', 'admin@maye.com');
+                $body = "<h2>Alerte Flux de Caisse</h2><br>Une sortie de caisse importante de <b>" . number_format($data['montant'], 0) . " XOF</b> a été enregistrée.<br>Libellé : {$data['libelle']}.";
+                \Packages\Mail\Mail::to($adminEmail, "ALERTE : Sortie de caisse > 1M", $body);
+            }
         }
 
         header("Location: /caisse");
