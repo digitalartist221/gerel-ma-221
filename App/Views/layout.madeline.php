@@ -294,7 +294,7 @@
             </a>
             <div class="flex items-center gap-6 text-[10px] font-black uppercase tracking-widest">
                 <a href="/login" class="text-slate-500 hover:text-[#8b5cf6] transition-colors">Client</a>
-                <a href="#waitlist" class="px-6 py-3 rounded-full bg-[#050510] text-white hover:bg-slate-800 transition-all shadow-md">Accès Anticipé</a>
+                <a href="/#waitlist" class="px-6 py-3 rounded-full bg-[#050510] text-white hover:bg-slate-800 transition-all shadow-md">Accès Anticipé</a>
             </div>
         </nav>
     </header>
